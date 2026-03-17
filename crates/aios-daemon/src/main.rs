@@ -15,8 +15,12 @@ use network_manager::NetworkManagerApp;
 
 use std::io::{Read, Write};
 use std::net::TcpListener;
+use dotenvy;
 
 fn main() {
+    // Load environment variables from .env file if present
+    dotenvy::dotenv().ok();
+    
     println!("Starting AIOS Daemon...");
     init_core();
 
