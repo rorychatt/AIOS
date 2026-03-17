@@ -39,8 +39,9 @@ impl AiosNativeApp for FileSystemApp {
                     .get("path")
                     .map(|s| s.as_str())
                     .unwrap_or("");
+                let safe_target = target_dir.trim_start_matches(|c| c == '/' || c == '\\');
                     
-                let full_path = Path::new(&context.active_directory).join(target_dir);
+                let full_path = Path::new(&context.active_directory).join(safe_target);
                 
                 if let (Ok(canonical_full), Ok(canonical_dir)) = (full_path.canonicalize(), Path::new(&context.active_directory).canonicalize()) {
                     if !canonical_full.starts_with(&canonical_dir) {
@@ -108,7 +109,8 @@ impl AiosNativeApp for FileSystemApp {
                     };
                 }
 
-                let full_path = Path::new(&context.active_directory).join(target_file);
+                let safe_target = target_file.trim_start_matches(|c| c == '/' || c == '\\');
+                let full_path = Path::new(&context.active_directory).join(safe_target);
                 
                 // Allow reading if the path is valid and canonically starts with the active directory
                 if let (Ok(canonical_full), Ok(canonical_dir)) = (full_path.canonicalize(), Path::new(&context.active_directory).canonicalize()) {
@@ -171,7 +173,8 @@ impl AiosNativeApp for FileSystemApp {
                     };
                 }
 
-                let full_path = Path::new(&context.active_directory).join(target_file);
+                let safe_target = target_file.trim_start_matches(|c| c == '/' || c == '\\');
+                let full_path = Path::new(&context.active_directory).join(safe_target);
                 
                 // We use canonicalize on the parent directory since the file might not exist yet
                 if let (Some(parent), Ok(canonical_dir)) = (full_path.parent(), Path::new(&context.active_directory).canonicalize()) {
@@ -231,7 +234,8 @@ impl AiosNativeApp for FileSystemApp {
                     };
                 }
 
-                let full_path = Path::new(&context.active_directory).join(target_dir);
+                let safe_target = target_dir.trim_start_matches(|c| c == '/' || c == '\\');
+                let full_path = Path::new(&context.active_directory).join(safe_target);
                 
                 // We use canonicalize on the parent directory since the folder doesn't exist yet
                 if let (Some(parent), Ok(canonical_dir)) = (full_path.parent(), Path::new(&context.active_directory).canonicalize()) {

@@ -64,42 +64,40 @@ impl AiosNativeApp for LlmRouterApp {
                                         &content[start..]
                                     };
                                     let command_str = command_str.trim();
-                                    
                                     println!("LLM decided to run: {}", command_str);
                                     
-                                    // Parse aios-cli arguments
-                                    let mut parts = command_str.split_whitespace();
-                                    let base_cmd = parts.next().unwrap_or("");
+                                    // Replace `aios-cli` with `cargo run --bin aios-cli --` so we use the dev environment
+                                    // and let the OS shell perfectly parse quotes and escape characters like \ (spaces)
+                                    let safe_cmd = command_str.replacen("aios-cli", "cargo run --quiet --bin aios-cli --", 1);
                                     
-                                    if base_cmd == "aios-cli" {
-                                        let args: Vec<&str> = parts.collect();
-                                        
-                                        // Spin up a subprocess executing the aios-cli command locally!
-                                        match std::process::Command::new("cargo")
-                                            .arg("run")
-                                            .arg("--bin")
-                                            .arg("aios-cli")
-                                            .args(args)
-                                            .output() 
-                                        {
-                                            Ok(output) => {
-                                                let stdout = String::from_utf8_lossy(&output.stdout);
-                                                let stderr = String::from_utf8_lossy(&output.stderr);
-                                                let final_out = if stderr.is_empty() { stdout.to_string() } else { format!("{}\n{}", stdout, stderr) };
-                                                
-                                                return ExecutionResult {
-                                                    success: true,
-                                                    output: final_out,
-                                                    error: None,
-                                                };
-                                            },
-                                            Err(e) => {
-                                                return ExecutionResult {
-                                                    success: false,
-                                                    output: "".to_string(),
-                                                    error: Some(format!("Failed to execute CLI Subprocess: {}", e)),
-                                                };
-                                            }
+                                    #[cfg(target_os = "windows")]
+                                    let output_res = std::process::Command::new("cmd")
+                                        .args(["/C", &safe_cmd])
+                                        .output();
+
+                                    #[cfg(not(target_os = "windows"))]
+                                    let output_res = std::process::Command::new("sh")
+                                        .args(["-c", &safe_cmd])
+                                        .output();
+
+                                    match output_res {
+                                        Ok(output) => {
+                                            let stdout = String::from_utf8_lossy(&output.stdout);
+                                            let stderr = String::from_utf8_lossy(&output.stderr);
+                                            let final_out = if stderr.trim().is_empty() { stdout.to_string() } else { format!("{}\n{}", stdout, stderr) };
+                                            
+                                            return ExecutionResult {
+                                                success: true,
+                                                output: final_out,
+                                                error: None,
+                                            };
+                                        },
+                                        Err(e) => {
+                                            return ExecutionResult {
+                                                success: false,
+                                                output: "".to_string(),
+                                                error: Some(format!("Failed to execute CLI Subprocess via shell: {}", e)),
+                                            };
                                         }
                                     }
                                 }
