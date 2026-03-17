@@ -83,15 +83,21 @@ impl AiosNativeApp for FileSystemApp {
                 }
 
                 let full_path = Path::new(&context.active_directory).join(target_file);
-                // Basic directory traversal protection
-                if !full_path.starts_with(&context.active_directory) {
+                
+                // Allow reading if the path is valid and canonically starts with the active directory
+                if let (Ok(canonical_full), Ok(canonical_dir)) = (full_path.canonicalize(), Path::new(&context.active_directory).canonicalize()) {
+                    if !canonical_full.starts_with(&canonical_dir) {
+                        return ExecutionResult {
+                            success: false,
+                            output: "".to_string(),
+                            error: Some("Security Error: Path traversal outside active directory forbidden".to_string()),
+                        };
+                    }
+                } else {
                     return ExecutionResult {
                         success: false,
                         output: "".to_string(),
-                        error: Some(
-                            "Security Error: Path traversal outside active directory forbidden"
-                                .to_string(),
-                        ),
+                        error: Some("Security Error: Invalid path or file does not exist for reading".to_string()),
                     };
                 }
 
@@ -140,16 +146,24 @@ impl AiosNativeApp for FileSystemApp {
                 }
 
                 let full_path = Path::new(&context.active_directory).join(target_file);
-                // Basic directory traversal protection
-                if !full_path.starts_with(&context.active_directory) {
-                    return ExecutionResult {
-                        success: false,
-                        output: "".to_string(),
-                        error: Some(
-                            "Security Error: Path traversal outside active directory forbidden"
-                                .to_string(),
-                        ),
-                    };
+                
+                // We use canonicalize on the parent directory since the file might not exist yet
+                if let (Some(parent), Ok(canonical_dir)) = (full_path.parent(), Path::new(&context.active_directory).canonicalize()) {
+                    if let Ok(canonical_parent) = parent.canonicalize() {
+                        if !canonical_parent.starts_with(&canonical_dir) {
+                            return ExecutionResult {
+                                success: false,
+                                output: "".to_string(),
+                                error: Some("Security Error: Path traversal outside active directory forbidden".to_string()),
+                            };
+                        }
+                    } else {
+                         return ExecutionResult {
+                            success: false,
+                            output: "".to_string(),
+                            error: Some("Security Error: Target directory does not exist".to_string()),
+                        };
+                    }
                 }
 
                 match fs::write(&full_path, content) {

@@ -14,7 +14,7 @@ public class FileBrowserApp : ViewBase
         var filesQuery = UseQuery(
             key: currentPath.Value,
             fetcher: async (ct) => {
-                var result = await daemonClient.SendIntentAsync("List files", "core.fs", new Dictionary<string, string> { { "path", currentPath.Value } });
+                var result = await daemonClient.SendIntentAsync("List files", "List", new Dictionary<string, string> { { "path", currentPath.Value } });
                 if (!result.Success) throw new Exception(result.Error ?? "Unknown daemon error.");
                 
                 var output = result.Output;
@@ -34,7 +34,7 @@ public class FileBrowserApp : ViewBase
         var fileContentQuery = UseQuery(
             () => selectedFile.Value,
             async (fileName, ct) => {
-                var result = await daemonClient.SendIntentAsync("Read file", "core.fs", new Dictionary<string, string> { { "path", fileName } });
+                var result = await daemonClient.SendIntentAsync("Read file", "Read", new Dictionary<string, string> { { "path", fileName } });
                 if (!result.Success) throw new Exception(result.Error ?? "Error reading file.");
                 return result.Output;
             }
