@@ -108,6 +108,63 @@ impl AiosNativeApp for FileSystemApp {
                     },
                 }
             }
+            "Write" => {
+                if !context.permissions.contains(&"fs.write".to_string()) {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some(
+                            "Permission Denied: Missing 'fs.write' in SystemContext"
+                                .to_string(),
+                        ),
+                    };
+                }
+
+                let target_file = intent
+                    .parameters
+                    .get("path")
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
+                let content = intent
+                    .parameters
+                    .get("content")
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
+
+                if target_file.is_empty() {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some("Missing 'path' parameter for Write capability".to_string()),
+                    };
+                }
+
+                let full_path = Path::new(&context.active_directory).join(target_file);
+                // Basic directory traversal protection
+                if !full_path.starts_with(&context.active_directory) {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some(
+                            "Security Error: Path traversal outside active directory forbidden"
+                                .to_string(),
+                        ),
+                    };
+                }
+
+                match fs::write(&full_path, content) {
+                    Ok(_) => ExecutionResult {
+                        success: true,
+                        output: format!("Successfully wrote 'path: {}' with content: '{}'", target_file, content),
+                        error: None,
+                    },
+                    Err(e) => ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some(format!("Failed to write file: {}", e)),
+                    },
+                }
+            }
             _ => ExecutionResult {
                 success: false,
                 output: "".to_string(),

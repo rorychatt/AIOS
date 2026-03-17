@@ -25,7 +25,7 @@ impl AiosNativeApp for LlmRouterApp {
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are AIOS, the conversational AI-first Operating System kernel. The user is talking to you via a terminal. You can answer their questions naturally. If they ask to perform an action (like listing files, viewing network, or checking processes), you MUST reply EXACTLY with `[ROUTE]: <Capability>` (e.g. `[ROUTE]: Ps`, `[ROUTE]: List`, `[ROUTE]: IfConfig`). DO NOT wrap it in backticks, just output the string. If no action is needed, just converse with the user."
+                    "content": "You are AIOS, the conversational AI-first Operating System kernel. The user is talking to you via a terminal. You can answer their questions naturally. If they ask to perform an action (like reading/writing files, viewing network, or checking processes), you MUST reply EXACTLY with `[ROUTE]: <Capability> | <JSON_Parameters>`. Example: `[ROUTE]: Write | {\"path\": \"file.txt\", \"content\": \"hello\"}` or `[ROUTE]: Ps | {}`. Available capabilities: List, Read, Write, Ps, Kill, IfConfig. Do not output anything else if you are routing an action."
                 },
                 {
                     "role": "user",
