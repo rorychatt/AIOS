@@ -83,7 +83,7 @@ impl AiosNativeApp for LlmRouterApp {
                                     
                                     #[cfg(target_os = "windows")]
                                     let output_res = std::process::Command::new("cmd")
-                                        .args(["/C", &safe_cmd])
+                                        .args(["/S", "/C", &format!("\"{}\"", safe_cmd)])
                                         .current_dir(&context.active_directory)
                                         .output();
 
