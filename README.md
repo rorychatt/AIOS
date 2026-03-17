@@ -45,6 +45,29 @@ No bloated window managers. No legacy graphics stacks consuming system resources
 
 ---
 
+## 🖥️ AIOS Interface (Ivy Dashboard)
+
+While AIOS operates primarily headlessly, it features an ultra-modern, interactive **Ivy Framework Web Dashboard**. 
+
+Built in C# and .NET 10, the `aios-dashboard` acts as a visualization layer running on `http://localhost:5010`. It displays realtime telemetry for the `aios-daemon` and installed plugins, alongside providing a sleek Conversational UI hooked directly into the local Ollama LLM router.
+
+### How to use
+
+Ensure you have Rust and the .NET 10 SDK installed.
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/AIOS.git
+cd AIOS
+
+# Start the Operating System
+cargo run --bin aios-cli start
+```
+
+This single command boots the Daemon in the background, spins up the Ivy Dashboard, and automatically launches your browser into the OS environment.
+
+---
+
 ## 🚀 Why AIOS?
 
 Right now, developers spend countless hours writing computer vision scripts, accessibility (A11y) tree parsers, and brittle RPA (Robotic Process Automation) bots just to let an AI click a button on a legacy OS.
