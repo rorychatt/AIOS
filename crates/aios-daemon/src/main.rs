@@ -26,9 +26,9 @@ fn main() {
                 if let Ok(size) = stream.read(&mut buffer) {
                     let request_str = String::from_utf8_lossy(&buffer[..size]);
                     
-                    match serde_json::from_str::<Intent>(&request_str) {
+                    match serde_yaml::from_str::<Intent>(&request_str) {
                         Ok(intent) => {
-                            println!("Received Intent: {:?}", intent);
+                            println!("Received Intent via YAML: {:?}", intent);
 
                             // Dummy context
                             let context = SystemContext {
@@ -39,18 +39,20 @@ fn main() {
 
                             let result = fs_plugin.execute(&intent, &context);
                             
-                            let response_json = serde_json::to_string(&result).unwrap() + "\n";
-                            stream.write_all(response_json.as_bytes()).unwrap();
+                            let mut response_yaml = serde_yaml::to_string(&result).unwrap();
+                            response_yaml.push_str("\n---\n"); // YAML document separator for framing
+                            stream.write_all(response_yaml.as_bytes()).unwrap();
                         }
                         Err(e) => {
-                            println!("Failed to parse intent JSON: {}", e);
+                            println!("Failed to parse intent YAML: {}", e);
                             let error_result = aios_core::models::ExecutionResult {
                                 success: false,
                                 output: "".to_string(),
-                                error: Some(format!("Invalid JSON format: {}", e)),
+                                error: Some(format!("Invalid YAML format: {}", e)),
                             };
-                            let response_json = serde_json::to_string(&error_result).unwrap() + "\n";
-                            stream.write_all(response_json.as_bytes()).unwrap();
+                            let mut response_yaml = serde_yaml::to_string(&error_result).unwrap();
+                            response_yaml.push_str("\n---\n");
+                            stream.write_all(response_yaml.as_bytes()).unwrap();
                         }
                     }
                 }

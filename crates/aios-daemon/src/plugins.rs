@@ -1,5 +1,7 @@
 use aios_core::models::{ExecutionResult, Intent, SystemContext};
 use aios_core::plugin::AiosNativeApp;
+use std::fs;
+use std::path::Path;
 
 pub struct FileSystemApp;
 
@@ -17,20 +19,80 @@ impl AiosNativeApp for FileSystemApp {
     }
 
     fn execute(&self, intent: &Intent, context: &SystemContext) -> ExecutionResult {
-        // In a real system, this would actually manipulate the file system
-        // and enforce context.permissions!
         let operation = intent.target_capability.as_deref().unwrap_or("Unknown");
 
         match operation {
-            "List" => ExecutionResult {
-                success: true,
-                output: format!("Files in {}: ['README.md', 'crates/', 'Cargo.toml']", context.active_directory),
-                error: None,
+            "List" => {
+                if !context.permissions.contains(&"fs.read".to_string()) {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some("Permission Denied: Missing 'fs.read' in SystemContext".to_string()),
+                    };
+                }
+
+                let target_dir = intent.parameters.get("path").unwrap_or(&context.active_directory);
+                match fs::read_dir(target_dir) {
+                    Ok(entries) => {
+                        let mut files = Vec::new();
+                        for entry in entries.flatten() {
+                            if let Ok(name) = entry.file_name().into_string() {
+                                files.push(name);
+                            }
+                        }
+                        ExecutionResult {
+                            success: true,
+                            output: format!("Files in {}: {:?}", target_dir, files),
+                            error: None,
+                        }
+                    }
+                    Err(e) => ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some(format!("Failed to list directory: {}", e)),
+                    }
+                }
             },
-            "Read" => ExecutionResult {
-                success: true,
-                output: format!("Simulated read from file context with user {}", context.user_id),
-                error: None,
+            "Read" => {
+                if !context.permissions.contains(&"fs.read".to_string()) {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some("Permission Denied: Missing 'fs.read' in SystemContext".to_string()),
+                    };
+                }
+
+                let target_file = intent.parameters.get("path").map(|s| s.as_str()).unwrap_or("");
+                if target_file.is_empty() {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some("Missing 'path' parameter for Read capability".to_string()),
+                    };
+                }
+
+                let full_path = Path::new(&context.active_directory).join(target_file);
+                // Basic directory traversal protection
+                if !full_path.starts_with(&context.active_directory) {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some("Security Error: Path traversal outside active directory forbidden".to_string()),
+                    };
+                }
+
+                match fs::read_to_string(&full_path) {
+                    Ok(content) => ExecutionResult {
+                        success: true,
+                        output: content,
+                        error: None,
+                    },
+                    Err(e) => ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some(format!("Failed to read file: {}", e)),
+                    }
+                }
             },
             _ => ExecutionResult {
                 success: false,

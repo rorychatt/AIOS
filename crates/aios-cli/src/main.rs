@@ -23,12 +23,14 @@ fn main() {
 
     match TcpStream::connect("127.0.0.1:9090") {
         Ok(mut stream) => {
-            let request_json = serde_json::to_string(&intent).unwrap();
-            stream.write_all(request_json.as_bytes()).unwrap();
+            let mut request_yaml = serde_yaml::to_string(&intent).unwrap();
+            request_yaml.push_str("\n---\n");
+            stream.write_all(request_yaml.as_bytes()).unwrap();
 
             let mut buffer = String::new();
             if let Ok(_) = stream.read_to_string(&mut buffer) {
-                match serde_json::from_str::<ExecutionResult>(&buffer) {
+                // Strip the exact framing if necessary, though yaml parser usually ignores trailing breaks
+                match serde_yaml::from_str::<ExecutionResult>(&buffer) {
                     Ok(result) => {
                         if result.success {
                             println!("Success:\n{}", result.output);
@@ -36,9 +38,10 @@ fn main() {
                             println!("Error:\n{}", result.error.unwrap_or_else(|| "Unknown Error".to_string()));
                         }
                     }
-                    Err(_) => {
-                        // Fallback to raw buffer printing if not JSON (daemon crashed, etc.)
-                        println!("{}", buffer);
+                    Err(e) => {
+                        println!("YAML Parse Error: {}", e);
+                        // Fallback to raw buffer
+                        println!("Raw Response:\n{}", buffer);
                     }
                 }
             }
