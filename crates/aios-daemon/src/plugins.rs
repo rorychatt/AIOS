@@ -15,6 +15,7 @@ impl AiosNativeApp for FileSystemApp {
             "List files in a directory [List(path)]".to_string(),
             "Read file contents [Read(path)]".to_string(),
             "Write string to file [Write(path, content)]".to_string(),
+            "Create a new folder [CreateFolder(path)]".to_string(),
         ]
     }
 
@@ -201,6 +202,66 @@ impl AiosNativeApp for FileSystemApp {
                         success: false,
                         output: "".to_string(),
                         error: Some(format!("Failed to write file: {}", e)),
+                    },
+                }
+            }
+            "CreateFolder" => {
+                if !context.permissions.contains(&"fs.write".to_string()) {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some(
+                            "Permission Denied: Missing 'fs.write' in SystemContext"
+                                .to_string(),
+                        ),
+                    };
+                }
+
+                let target_dir = intent
+                    .parameters
+                    .get("path")
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
+
+                if target_dir.is_empty() {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some("Missing 'path' parameter for CreateFolder capability".to_string()),
+                    };
+                }
+
+                let full_path = Path::new(&context.active_directory).join(target_dir);
+                
+                // We use canonicalize on the parent directory since the folder doesn't exist yet
+                if let (Some(parent), Ok(canonical_dir)) = (full_path.parent(), Path::new(&context.active_directory).canonicalize()) {
+                    if let Ok(canonical_parent) = parent.canonicalize() {
+                        if !canonical_parent.starts_with(&canonical_dir) {
+                            return ExecutionResult {
+                                success: false,
+                                output: "".to_string(),
+                                error: Some("Security Error: Path traversal outside active directory forbidden".to_string()),
+                            };
+                        }
+                    } else {
+                         return ExecutionResult {
+                            success: false,
+                            output: "".to_string(),
+                            error: Some("Security Error: Target parent directory does not exist".to_string()),
+                        };
+                    }
+                }
+
+                match fs::create_dir_all(&full_path) {
+                    Ok(_) => ExecutionResult {
+                        success: true,
+                        output: format!("Successfully created folder: '{}'", target_dir),
+                        error: None,
+                    },
+                    Err(e) => ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some(format!("Failed to create folder: {}", e)),
                     },
                 }
             }

@@ -70,7 +70,7 @@ fn main() {
                             // Route Intents
                             let cap_str = intent.target_capability.as_deref().unwrap_or("");
 
-                            if cap_str == "List" || cap_str == "Read" || cap_str == "Write" {
+                            if cap_str == "List" || cap_str == "Read" || cap_str == "Write" || cap_str == "CreateFolder" {
                                 final_result = fs_plugin.execute(&intent, &context);
                             } else if cap_str == "Ps" || cap_str == "Kill" {
                                 final_result = proc_plugin.execute(&intent, &context);
@@ -107,7 +107,7 @@ fn main() {
 
                                     println!("LLM suggested route: {} with parameters: {:?}", predicted_cap, new_intent.parameters);
 
-                                    if predicted_cap == "List" || predicted_cap == "Read" || predicted_cap == "Write" {
+                                    if predicted_cap == "List" || predicted_cap == "Read" || predicted_cap == "Write" || predicted_cap == "CreateFolder" {
                                         final_result = fs_plugin.execute(&new_intent, &context);
                                     } else if predicted_cap == "Ps" || predicted_cap == "Kill" {
                                         final_result = proc_plugin.execute(&new_intent, &context);

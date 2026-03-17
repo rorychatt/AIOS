@@ -196,3 +196,34 @@ fn stop_aios() {
     
     println!("Dangling processes cleared.");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cli_has_start_and_stop_functions() {
+        // Just verify they compile and exist, actual execution launches heavy processes
+        let start_fn: fn() = start_aios;
+        let stop_fn: fn() = stop_aios;
+        
+        assert!(start_fn as usize > 0);
+        assert!(stop_fn as usize > 0);
+    }
+
+    #[test]
+    fn test_intent_struct_serialization() {
+        let intent = Intent {
+            raw_text: "Read file".to_string(),
+            target_capability: Some("Read".to_string()),
+            parameters: std::collections::HashMap::from([
+                ("path".to_string(), "foo.txt".to_string())
+            ]),
+        };
+        
+        let yaml = serde_yaml::to_string(&intent).unwrap();
+        assert!(yaml.contains("Read file"));
+        assert!(yaml.contains("foo.txt"));
+        assert!(yaml.contains("target_capability"));
+    }
+}
