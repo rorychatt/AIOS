@@ -39,8 +39,10 @@ fn main() {
                 let mut buffer = [0; 4096];
                 if let Ok(size) = stream.read(&mut buffer) {
                     let request_str = String::from_utf8_lossy(&buffer[..size]);
+                    
+                    let clean_request = request_str.split("---").next().unwrap_or(&request_str).trim();
 
-                    match serde_yaml::from_str::<Intent>(&request_str) {
+                    match serde_yaml::from_str::<Intent>(clean_request) {
                         Ok(intent) => {
                             println!("Received Intent via YAML: {:?}", intent);
 

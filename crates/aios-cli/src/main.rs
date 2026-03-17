@@ -72,8 +72,9 @@ fn send_intent(intent: Intent) {
 
             let mut buffer = String::new();
             if stream.read_to_string(&mut buffer).is_ok() {
-                // Strip the exact framing if necessary, though yaml parser usually ignores trailing breaks
-                match serde_yaml::from_str::<ExecutionResult>(&buffer) {
+                // Strip the YAML document separator if it exists so serde_yaml can parse it as a single document
+                let clean_buffer = buffer.split("---").next().unwrap_or(&buffer).trim();
+                match serde_yaml::from_str::<ExecutionResult>(clean_buffer) {
                     Ok(result) => {
                         if result.success {
                             println!("{}", result.output);
