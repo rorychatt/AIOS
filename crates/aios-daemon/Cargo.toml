@@ -1,0 +1,7 @@
+[package]
+name = "aios-daemon"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aios-core = { path = "../aios-core" }
