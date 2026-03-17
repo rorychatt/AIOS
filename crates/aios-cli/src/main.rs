@@ -6,17 +6,28 @@ use aios_core::models::{Intent, ExecutionResult};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        println!("Usage: aios-cli <intent statement>");
-        println!("Example: aios-cli \"List files in directory\"");
+    if args.len() < 3 {
+        println!("Usage: aios-cli <Capability> <Intent Statement> [paramKey=paramValue...]");
+        println!("Example: aios-cli List \"List files in directory\" path=.");
+        println!("Example: aios-cli Kill \"Kill process\" pid=1234");
         return;
     }
 
-    let raw_text = args[1..].join(" ");
+    let target_cap = args[1].clone();
+    let raw_text = args[2].clone();
+    
+    let mut params = HashMap::new();
+    for i in 3..args.len() {
+        let parts: Vec<&str> = args[i].splitn(2, '=').collect();
+        if parts.len() == 2 {
+            params.insert(parts[0].to_string(), parts[1].to_string());
+        }
+    }
+
     let intent = Intent {
         raw_text: raw_text.clone(),
-        target_capability: Some("List".to_string()), // Hardcode mapping for CLI testing right now
-        parameters: HashMap::new(),
+        target_capability: Some(target_cap), 
+        parameters: params,
     };
 
     println!("Calling AIOS Daemon with Intent: '{}'", raw_text);

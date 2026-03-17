@@ -1,5 +1,7 @@
 pub mod plugins;
 pub mod llm_router;
+pub mod process_manager;
+pub mod network_manager;
 
 use aios_core::init_core;
 use aios_core::models::{Intent, SystemContext};
@@ -8,6 +10,8 @@ use std::collections::HashMap;
 
 use plugins::FileSystemApp;
 use llm_router::LlmRouterApp;
+use process_manager::ProcessManagerApp;
+use network_manager::NetworkManagerApp;
 
 use std::io::{Read, Write};
 use std::net::TcpListener;
@@ -17,7 +21,12 @@ fn main() {
     init_core();
 
     let fs_plugin = FileSystemApp;
+    let proc_plugin = ProcessManagerApp;
+    let net_plugin = NetworkManagerApp;
+    
     println!("Loaded Plugin: {}", fs_plugin.id());
+    println!("Loaded Plugin: {}", proc_plugin.id());
+    println!("Loaded Plugin: {}", net_plugin.id());
 
     let listener = TcpListener::bind("127.0.0.1:9090").expect("Failed to bind to port 9090");
     println!("Daemon listening on 127.0.0.1:9090...");
@@ -37,7 +46,12 @@ fn main() {
                             let context = SystemContext {
                                 active_directory: "/workspace".to_string(),
                                 user_id: "agent_01".to_string(),
-                                permissions: vec!["fs.read".to_string(), "api.openai".to_string()],
+                                permissions: vec![
+                                    "fs.read".to_string(), 
+                                    "api.openai".to_string(),
+                                    "proc.manage".to_string(),
+                                    "net.read".to_string()
+                                ],
                             };
 
                             let mut final_result = aios_core::models::ExecutionResult {
@@ -46,9 +60,15 @@ fn main() {
                                 error: Some("Capability not handled".to_string()),
                             };
 
-                            // Check explicit capabilities first
-                            if intent.target_capability == Some("List".to_string()) || intent.target_capability == Some("Read".to_string()) {
+                            // Route Intents
+                            let cap_str = intent.target_capability.as_deref().unwrap_or("");
+                            
+                            if cap_str == "List" || cap_str == "Read" {
                                 final_result = fs_plugin.execute(&intent, &context);
+                            } else if cap_str == "Ps" || cap_str == "Kill" {
+                                final_result = proc_plugin.execute(&intent, &context);
+                            } else if cap_str == "IfConfig" {
+                                final_result = net_plugin.execute(&intent, &context);
                             } else {
                                 // Fallback: Route through LLM!
                                 println!("No exact match for capability, routing to LLM...");
