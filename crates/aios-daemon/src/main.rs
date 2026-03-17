@@ -6,7 +6,6 @@ pub mod network_manager;
 use aios_core::init_core;
 use aios_core::models::{Intent, SystemContext};
 use aios_core::plugin::AiosNativeApp;
-use std::collections::HashMap;
 
 use plugins::FileSystemApp;
 use llm_router::LlmRouterApp;
@@ -55,14 +54,10 @@ fn main() {
                                     "api.openai".to_string(),
                                     "proc.manage".to_string(),
                                     "net.read".to_string()
-                                ],
+                                ]
                             };
 
-                            let mut final_result = aios_core::models::ExecutionResult {
-                                success: false,
-                                output: "".to_string(),
-                                error: Some("Capability not handled".to_string()),
-                            };
+                            let mut final_result;
 
                             // Route Intents
                             let cap_str = intent.target_capability.as_deref().unwrap_or("");

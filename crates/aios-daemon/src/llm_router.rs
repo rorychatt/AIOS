@@ -1,6 +1,5 @@
 use aios_core::models::{ExecutionResult, Intent, SystemContext};
 use aios_core::plugin::AiosNativeApp;
-use serde_yaml;
 
 pub struct LlmRouterApp;
 
@@ -16,9 +15,8 @@ impl AiosNativeApp for LlmRouterApp {
     }
 
     fn execute(&self, intent: &Intent, _context: &SystemContext) -> ExecutionResult {
-        // Here we handle the bridging to OpenAI Chat completions API.
-        
         let model = std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "llama3".to_string());
+        let user_prompt = intent.parameters.get("intent_text").unwrap_or(&intent.raw_text);
         
         // We use serde_json for the HTTP payload natively now that we don't need to force YAML structures through the API layer
         let payload = serde_json::json!({
