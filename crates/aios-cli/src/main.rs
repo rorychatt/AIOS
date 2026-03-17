@@ -13,8 +13,22 @@ fn main() {
         return;
     }
 
+    let command = args[1].clone();
+
+    if command == "start" {
+        println!("Booting AIOS...");
+        start_aios();
+        return;
+    }
+
+    if args.len() < 3 {
+        println!("Usage: aios-cli <target_capability> <raw_text> [param1=val1 ...]");
+        println!("       aios-cli start");
+        return;
+    }
+
     // Direct CLI execution mode
-    let target_cap = args[1].clone();
+    let target_cap = command;
     let raw_text = args[2].clone();
 
     let mut params = HashMap::new();
@@ -96,5 +110,55 @@ fn send_intent(intent: Intent) {
             println!("Failed to connect to daemon: {}", e);
             println!("Make sure aios-daemon is running.");
         }
+    }
+}
+
+fn start_aios() {
+    use std::process::Command;
+    use std::thread;
+    use std::time::Duration;
+
+    // 1. Start the daemon in the background
+    println!("Starting aios-daemon in the background...");
+    match Command::new("cargo")
+        .arg("run")
+        .arg("--bin")
+        .arg("aios-daemon")
+        .current_dir(env::current_dir().unwrap_or_else(|_| ".".into()))
+        .spawn() 
+    {
+        Ok(_) => println!("Daemon started successfully."),
+        Err(e) => {
+            println!("Failed to start daemon: {}", e);
+            return;
+        }
+    }
+
+    // Give daemon a second to bind to port 9090
+    thread::sleep(Duration::from_secs(2));
+
+    // 2. Start the aios-dashboard
+    let dashboard_dir = env::current_dir().unwrap_or_else(|_| ".".into()).join("aios-dashboard");
+    println!("Starting aios-dashboard...");
+    match Command::new("dotnet")
+        .arg("run")
+        .current_dir(&dashboard_dir)
+        .spawn()
+    {
+        Ok(_) => println!("Dashboard web server started (port 5010)."),
+        Err(e) => {
+            println!("Failed to start dashboard: {}", e);
+            return;
+        }
+    }
+
+    // Give the Web Server a second to initialize
+    thread::sleep(Duration::from_secs(2));
+
+    // 3. Launch the browser
+    println!("Opening Ivy Framework Dashboard...");
+    if let Err(e) = open::that("http://localhost:5010") {
+        println!("Failed to open browser: {}", e);
+        println!("Please navigate manually to http://localhost:5010");
     }
 }

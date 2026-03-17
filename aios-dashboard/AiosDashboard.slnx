@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/Apps/">
+    <Project Path="AiosDashboard.csproj" />
+  </Folder>
+</Solution>

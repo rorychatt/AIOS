@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 aios-core = { path = "../aios-core" }
+open = "5.3.3"
 serde_yaml = "0.9"
