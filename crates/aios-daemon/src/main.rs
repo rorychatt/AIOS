@@ -1,10 +1,13 @@
 pub mod plugins;
+pub mod llm_router;
 
 use aios_core::init_core;
 use aios_core::models::{Intent, SystemContext};
 use aios_core::plugin::AiosNativeApp;
 use std::collections::HashMap;
+
 use plugins::FileSystemApp;
+use llm_router::LlmRouterApp;
 
 use std::io::{Read, Write};
 use std::net::TcpListener;
@@ -34,12 +37,29 @@ fn main() {
                             let context = SystemContext {
                                 active_directory: "/workspace".to_string(),
                                 user_id: "agent_01".to_string(),
-                                permissions: vec!["fs.read".to_string()],
+                                permissions: vec!["fs.read".to_string(), "api.openai".to_string()],
                             };
 
-                            let result = fs_plugin.execute(&intent, &context);
+                            let mut final_result = aios_core::models::ExecutionResult {
+                                success: false,
+                                output: "".to_string(),
+                                error: Some("Capability not handled".to_string()),
+                            };
+
+                            // Check explicit capabilities first
+                            if intent.target_capability == Some("List".to_string()) || intent.target_capability == Some("Read".to_string()) {
+                                final_result = fs_plugin.execute(&intent, &context);
+                            } else {
+                                // Fallback: Route through LLM!
+                                println!("No exact match for capability, routing to LLM...");
+                                let router = LlmRouterApp;
+                                let llm_response = router.execute(&intent, &context);
+                                
+                                // Demo logic: We just return the LLM's chosen capability mapping suggestion
+                                final_result = llm_response;
+                            }
                             
-                            let mut response_yaml = serde_yaml::to_string(&result).unwrap();
+                            let mut response_yaml = serde_yaml::to_string(&final_result).unwrap();
                             response_yaml.push_str("\n---\n"); // YAML document separator for framing
                             stream.write_all(response_yaml.as_bytes()).unwrap();
                         }
