@@ -21,7 +21,9 @@ impl AiosNativeApp for ProcessManagerApp {
             return ExecutionResult {
                 success: false,
                 output: "".to_string(),
-                error: Some("Permission Denied: Missing 'proc.manage' in SystemContext".to_string()),
+                error: Some(
+                    "Permission Denied: Missing 'proc.manage' in SystemContext".to_string(),
+                ),
             };
         }
 
@@ -31,7 +33,7 @@ impl AiosNativeApp for ProcessManagerApp {
             "Ps" => {
                 let mut sys = System::new_all();
                 sys.refresh_all();
-                
+
                 let mut proc_list = Vec::new();
                 for (pid, process) in sys.processes() {
                     proc_list.push(format!("[{}] {}", pid, process.name()));
@@ -42,17 +44,29 @@ impl AiosNativeApp for ProcessManagerApp {
                     output: format!("Processes:\n{}", proc_list.join("\n")),
                     error: None,
                 }
-            },
+            }
             "Kill" => {
-                let pid_str = intent.parameters.get("pid").map(|s| s.as_str()).unwrap_or("");
+                let pid_str = intent
+                    .parameters
+                    .get("pid")
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
                 if let Ok(pid) = pid_str.parse::<sysinfo::Pid>() {
                     let sys = System::new_all();
                     if let Some(process) = sys.process(pid) {
                         let success = process.kill();
                         ExecutionResult {
                             success,
-                            output: if success { format!("Killed PID {}", pid) } else { "".to_string() },
-                            error: if !success { Some(format!("Failed to kill PID {}", pid)) } else { None },
+                            output: if success {
+                                format!("Killed PID {}", pid)
+                            } else {
+                                "".to_string()
+                            },
+                            error: if !success {
+                                Some(format!("Failed to kill PID {}", pid))
+                            } else {
+                                None
+                            },
                         }
                     } else {
                         ExecutionResult {
@@ -68,12 +82,16 @@ impl AiosNativeApp for ProcessManagerApp {
                         error: Some("Valid 'pid' parameter required".to_string()),
                     }
                 }
-            },
+            }
             _ => ExecutionResult {
                 success: false,
                 output: "".to_string(),
-                error: Some(format!("Unknown capability {} for {}", operation, self.id())),
-            }
+                error: Some(format!(
+                    "Unknown capability {} for {}",
+                    operation,
+                    self.id()
+                )),
+            },
         }
     }
 }

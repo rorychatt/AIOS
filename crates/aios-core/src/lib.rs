@@ -1,5 +1,5 @@
 pub mod models {
-    use serde::{Serialize, Deserialize};
+    use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
 
     /// An intent is the high-level goal an agent or human is trying to achieve.
@@ -28,14 +28,14 @@ pub mod models {
 }
 
 pub mod plugin {
-    use super::models::{Intent, SystemContext, ExecutionResult};
+    use super::models::{ExecutionResult, Intent, SystemContext};
 
     /// Represents an AIOS Native Application or Plugin.
     /// Replaces the traditional graphical app with an API/CLI representation.
     pub trait AiosNativeApp {
         /// The unique system identifier for this app (e.g., "core.fs")
         fn id(&self) -> &str;
-        
+
         /// What this app can do. Exposed to the LLM/Agent.
         fn describe_capabilities(&self) -> Vec<String>;
 

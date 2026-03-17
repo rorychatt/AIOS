@@ -10,9 +10,7 @@ impl AiosNativeApp for NetworkManagerApp {
     }
 
     fn describe_capabilities(&self) -> Vec<String> {
-        vec![
-            "View network interfaces and traffic [IfConfig]".to_string(),
-        ]
+        vec!["View network interfaces and traffic [IfConfig]".to_string()]
     }
 
     fn execute(&self, intent: &Intent, context: &SystemContext) -> ExecutionResult {
@@ -30,10 +28,15 @@ impl AiosNativeApp for NetworkManagerApp {
             "IfConfig" => {
                 let mut sys = System::new_all();
                 sys.refresh_networks();
-                
+
                 let mut net_list = Vec::new();
                 for (interface_name, data) in sys.networks() {
-                    net_list.push(format!("{}: In: {} B, Out: {} B", interface_name, data.total_received(), data.total_transmitted()));
+                    net_list.push(format!(
+                        "{}: In: {} B, Out: {} B",
+                        interface_name,
+                        data.total_received(),
+                        data.total_transmitted()
+                    ));
                 }
 
                 ExecutionResult {
@@ -41,12 +44,16 @@ impl AiosNativeApp for NetworkManagerApp {
                     output: format!("Network Interfaces:\n{}", net_list.join("\n")),
                     error: None,
                 }
-            },
+            }
             _ => ExecutionResult {
                 success: false,
                 output: "".to_string(),
-                error: Some(format!("Unknown capability {} for {}", operation, self.id())),
-            }
+                error: Some(format!(
+                    "Unknown capability {} for {}",
+                    operation,
+                    self.id()
+                )),
+            },
         }
     }
 }

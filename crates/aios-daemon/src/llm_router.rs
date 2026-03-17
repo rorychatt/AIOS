@@ -9,15 +9,16 @@ impl AiosNativeApp for LlmRouterApp {
     }
 
     fn describe_capabilities(&self) -> Vec<String> {
-        vec![
-            "Route intent to OpenAI for reasoning [Route(intent_text)]".to_string(),
-        ]
+        vec!["Route intent to OpenAI for reasoning [Route(intent_text)]".to_string()]
     }
 
     fn execute(&self, intent: &Intent, _context: &SystemContext) -> ExecutionResult {
         let model = std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "llama3".to_string());
-        let user_prompt = intent.parameters.get("intent_text").unwrap_or(&intent.raw_text);
-        
+        let user_prompt = intent
+            .parameters
+            .get("intent_text")
+            .unwrap_or(&intent.raw_text);
+
         // We use serde_json for the HTTP payload natively now that we don't need to force YAML structures through the API layer
         let payload = serde_json::json!({
             "model": model,
@@ -36,7 +37,8 @@ impl AiosNativeApp for LlmRouterApp {
 
         // Blocking HTTP call to local Ollama
         let client = reqwest::blocking::Client::new();
-        let res = client.post("http://127.0.0.1:11434/api/chat")
+        let res = client
+            .post("http://127.0.0.1:11434/api/chat")
             .header("Content-Type", "application/json")
             .json(&payload)
             .send();
@@ -59,26 +61,26 @@ impl AiosNativeApp for LlmRouterApp {
                                     error: Some("Malformed response from Ollama".to_string()),
                                 }
                             }
-                        },
+                        }
                         Err(e) => ExecutionResult {
                             success: false,
                             output: "".to_string(),
                             error: Some(format!("Failed to parse Ollama JSON: {}", e)),
-                        }
+                        },
                     }
                 } else {
-                     ExecutionResult {
+                    ExecutionResult {
                         success: false,
                         output: "".to_string(),
                         error: Some(format!("Ollama returned an HTTP {}", response.status())),
                     }
                 }
-            },
+            }
             Err(e) => ExecutionResult {
                 success: false,
                 output: "".to_string(),
                 error: Some(format!("Request to OpenAI failed: {}", e)),
-            }
+            },
         }
     }
 }

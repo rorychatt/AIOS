@@ -27,11 +27,16 @@ impl AiosNativeApp for FileSystemApp {
                     return ExecutionResult {
                         success: false,
                         output: "".to_string(),
-                        error: Some("Permission Denied: Missing 'fs.read' in SystemContext".to_string()),
+                        error: Some(
+                            "Permission Denied: Missing 'fs.read' in SystemContext".to_string(),
+                        ),
                     };
                 }
 
-                let target_dir = intent.parameters.get("path").unwrap_or(&context.active_directory);
+                let target_dir = intent
+                    .parameters
+                    .get("path")
+                    .unwrap_or(&context.active_directory);
                 match fs::read_dir(target_dir) {
                     Ok(entries) => {
                         let mut files = Vec::new();
@@ -50,19 +55,25 @@ impl AiosNativeApp for FileSystemApp {
                         success: false,
                         output: "".to_string(),
                         error: Some(format!("Failed to list directory: {}", e)),
-                    }
+                    },
                 }
-            },
+            }
             "Read" => {
                 if !context.permissions.contains(&"fs.read".to_string()) {
                     return ExecutionResult {
                         success: false,
                         output: "".to_string(),
-                        error: Some("Permission Denied: Missing 'fs.read' in SystemContext".to_string()),
+                        error: Some(
+                            "Permission Denied: Missing 'fs.read' in SystemContext".to_string(),
+                        ),
                     };
                 }
 
-                let target_file = intent.parameters.get("path").map(|s| s.as_str()).unwrap_or("");
+                let target_file = intent
+                    .parameters
+                    .get("path")
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
                 if target_file.is_empty() {
                     return ExecutionResult {
                         success: false,
@@ -77,7 +88,10 @@ impl AiosNativeApp for FileSystemApp {
                     return ExecutionResult {
                         success: false,
                         output: "".to_string(),
-                        error: Some("Security Error: Path traversal outside active directory forbidden".to_string()),
+                        error: Some(
+                            "Security Error: Path traversal outside active directory forbidden"
+                                .to_string(),
+                        ),
                     };
                 }
 
@@ -91,14 +105,18 @@ impl AiosNativeApp for FileSystemApp {
                         success: false,
                         output: "".to_string(),
                         error: Some(format!("Failed to read file: {}", e)),
-                    }
+                    },
                 }
-            },
+            }
             _ => ExecutionResult {
                 success: false,
                 output: "".to_string(),
-                error: Some(format!("Unknown capability {} for {}", operation, self.id())),
-            }
+                error: Some(format!(
+                    "Unknown capability {} for {}",
+                    operation,
+                    self.id()
+                )),
+            },
         }
     }
 }
