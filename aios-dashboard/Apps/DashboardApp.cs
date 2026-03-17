@@ -35,18 +35,19 @@ public class DashboardApp : ViewBase
                 | Text.H2("Terminal Session")
                 | new Chat(
                     messagesState.Value.Select(m => new Ivy.ChatMessage(m.Author == "User" ? ChatSender.User : ChatSender.Assistant, m.Text)).ToArray(),
-                    onSend: async (e) => {
+                    onSend: async (e) =>
+                    {
                         var text = e.Value;
                         if (string.IsNullOrWhiteSpace(text)) return;
-                        
+
                         var newList = new List<AiosChatMessage>(messagesState.Value) {
                             new AiosChatMessage("User", text)
                         };
                         messagesState.Set(newList);
-                        
+
                         isProcessing.Set(true);
                         var result = await daemonClient.SendIntentAsync(text);
-                        
+
                         var updatedList = new List<AiosChatMessage>(messagesState.Value) {
                             new AiosChatMessage("AIOS", result.Success ? result.Output : $"Error: {result.Error}")
                         };

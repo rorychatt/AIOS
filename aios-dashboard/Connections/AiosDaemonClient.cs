@@ -16,7 +16,7 @@ public class AiosDaemonClient
         _serializer = new SerializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .Build();
-            
+
         _deserializer = new DeserializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
@@ -40,9 +40,9 @@ public class AiosDaemonClient
             using var reader = new StreamReader(stream, Encoding.UTF8);
             var buffer = new char[4096];
             var bytesRead = await reader.ReadAsync(buffer, 0, buffer.Length);
-            
+
             var responseYaml = new string(buffer, 0, bytesRead);
-            
+
             // Cleanup the document separators
             var cleanYaml = responseYaml.Split("---")[0].Trim();
 
@@ -65,7 +65,8 @@ public class AiosDaemonClient
             using var client = new TcpClient("127.0.0.1", 9090);
             using var stream = client.GetStream();
 
-            var intent = new Intent { 
+            var intent = new Intent
+            {
                 RawText = text,
                 TargetCapability = targetCapability,
                 Parameters = parameters
@@ -79,7 +80,7 @@ public class AiosDaemonClient
             using var reader = new StreamReader(stream, Encoding.UTF8);
             var buffer = new char[8192];
             var bytesRead = await reader.ReadAsync(buffer, 0, buffer.Length);
-            
+
             var responseYaml = new string(buffer, 0, bytesRead);
             var cleanYaml = responseYaml.Split("---")[0].Trim();
 
