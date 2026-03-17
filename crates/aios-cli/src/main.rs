@@ -21,9 +21,15 @@ fn main() {
         return;
     }
 
+    if command == "stop" {
+        stop_aios();
+        return;
+    }
+
     if args.len() < 3 {
         println!("Usage: aios-cli <target_capability> <raw_text> [param1=val1 ...]");
         println!("       aios-cli start");
+        println!("       aios-cli stop");
         return;
     }
 
@@ -120,19 +126,22 @@ fn start_aios() {
 
     // 1. Start the daemon in the background
     println!("Starting aios-daemon in the background...");
-    match Command::new("cargo")
+    let mut daemon_child = match Command::new("cargo")
         .arg("run")
         .arg("--bin")
         .arg("aios-daemon")
         .current_dir(env::current_dir().unwrap_or_else(|_| ".".into()))
         .spawn() 
     {
-        Ok(_) => println!("Daemon started successfully."),
+        Ok(child) => {
+            println!("Daemon started successfully.");
+            child
+        },
         Err(e) => {
             println!("Failed to start daemon: {}", e);
             return;
         }
-    }
+    };
 
     // Give daemon a second to bind to port 9090
     thread::sleep(Duration::from_secs(2));
@@ -140,17 +149,21 @@ fn start_aios() {
     // 2. Start the aios-dashboard
     let dashboard_dir = env::current_dir().unwrap_or_else(|_| ".".into()).join("aios-dashboard");
     println!("Starting aios-dashboard...");
-    match Command::new("dotnet")
+    let mut dashboard_child = match Command::new("dotnet")
         .arg("run")
         .current_dir(&dashboard_dir)
         .spawn()
     {
-        Ok(_) => println!("Dashboard web server started (port 5010)."),
+        Ok(child) => {
+            println!("Dashboard web server started (port 5010).");
+            child
+        },
         Err(e) => {
             println!("Failed to start dashboard: {}", e);
+            let _ = daemon_child.kill();
             return;
         }
-    }
+    };
 
     // Give the Web Server a second to initialize
     thread::sleep(Duration::from_secs(2));
@@ -161,4 +174,25 @@ fn start_aios() {
         println!("Failed to open browser: {}", e);
         println!("Please navigate manually to http://localhost:5010");
     }
+
+    println!("===========================================================");
+    println!("AIOS is running! Press Ctrl+C in this terminal to stop it.");
+    println!("===========================================================");
+
+    // 4. Block so the processes tie to this terminal
+    let _ = daemon_child.wait();
+    let _ = dashboard_child.wait();
+    
+    println!("AIOS processes stopped.");
+}
+
+fn stop_aios() {
+    use std::process::Command;
+    println!("Stopping AIOS background processes...");
+    
+    // Windows taskkill
+    let _ = Command::new("taskkill").args(&["/F", "/IM", "aios-daemon.exe"]).status();
+    let _ = Command::new("taskkill").args(&["/F", "/IM", "AiosDashboard.exe"]).status();
+    
+    println!("Dangling processes cleared.");
 }
