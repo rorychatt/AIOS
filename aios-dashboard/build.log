@@ -1,49 +1,11 @@
   Determining projects to restore...
   All projects are up-to-date for restore.
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(19,48): error CS0311: The type 'Ivy.GridView' cannot be used as type parameter 'T' in the generic type or method 'WidgetBaseExtensions.Size<T>(T, Size?)'. There is no implicit reference conversion from 'Ivy.GridView' to 'Ivy.WidgetBase'. [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(21,19): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(21,43): error CS1501: No overload for method 'H2' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(24,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(24,42): error CS1501: No overload for method 'Bold' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(27,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(27,51): error CS1501: No overload for method 'Bold' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(28,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(28,45): error CS1501: No overload for method 'Muted' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(29,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(29,47): error CS1501: No overload for method 'Muted' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(30,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(30,46): error CS1501: No overload for method 'Muted' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(31,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(31,53): error CS1501: No overload for method 'Muted' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(34,59): error CS1061: 'LayoutView' does not contain a definition for 'ColumnSpan' and no accessible extension method 'ColumnSpan' accepting a first argument of type 'LayoutView' could be found (are you missing a using directive or an assembly reference?) [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(35,19): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(35,48): error CS1501: No overload for method 'H2' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(42,54): error CS0103: The name 'CalloutType' does not exist in the current context [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(42,73): error CS0103: The name 'CalloutType' does not exist in the current context [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
+D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(43,31): error CS1929: 'Callout' does not contain a definition for 'Color' and the best extension method overload 'CalendarEventExtensions.Color(CalendarEvent, string)' requires a receiver of type 'Ivy.CalendarEvent' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
 
 Build FAILED.
 
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(19,48): error CS0311: The type 'Ivy.GridView' cannot be used as type parameter 'T' in the generic type or method 'WidgetBaseExtensions.Size<T>(T, Size?)'. There is no implicit reference conversion from 'Ivy.GridView' to 'Ivy.WidgetBase'. [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(21,19): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(21,43): error CS1501: No overload for method 'H2' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(24,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(24,42): error CS1501: No overload for method 'Bold' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(27,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(27,51): error CS1501: No overload for method 'Bold' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(28,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(28,45): error CS1501: No overload for method 'Muted' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(29,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(29,47): error CS1501: No overload for method 'Muted' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(30,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(30,46): error CS1501: No overload for method 'Muted' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(31,23): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(31,53): error CS1501: No overload for method 'Muted' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(34,59): error CS1061: 'LayoutView' does not contain a definition for 'ColumnSpan' and no accessible extension method 'ColumnSpan' accepting a first argument of type 'LayoutView' could be found (are you missing a using directive or an assembly reference?) [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(35,19): error CS0712: Cannot create an instance of the static class 'Text' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(35,48): error CS1501: No overload for method 'H2' takes 0 arguments [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(42,54): error CS0103: The name 'CalloutType' does not exist in the current context [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
-D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(42,73): error CS0103: The name 'CalloutType' does not exist in the current context [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
+D:\git\rorychatt\AIOS\aios-dashboard\Apps\DashboardApp.cs(43,31): error CS1929: 'Callout' does not contain a definition for 'Color' and the best extension method overload 'CalendarEventExtensions.Color(CalendarEvent, string)' requires a receiver of type 'Ivy.CalendarEvent' [D:\git\rorychatt\AIOS\aios-dashboard\AiosDashboard.csproj]
     0 Warning(s)
-    20 Error(s)
+    1 Error(s)
 
-Time Elapsed 00:00:00.74
+Time Elapsed 00:00:00.90

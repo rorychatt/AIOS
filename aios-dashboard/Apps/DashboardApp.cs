@@ -37,7 +37,11 @@ public class DashboardApp : ViewBase
                     Layout.Vertical().Gap(4).Size(Size.Full())
                     | (Layout.Vertical().Gap(4).Size(Size.Full()).Align(Align.TopLeft)
                         | messagesState.Value.Select(m => 
-                            new Callout(m.Content).Title(m.Role)
+                            Layout.Horizontal()
+                                .Width(Size.Full())
+                                .Align(m.Role == "User" ? Align.Right : Align.Left)
+                            | new Callout(m.Content)
+                                .Title(m.Role)
                         )
                     )
                     | (Layout.Horizontal().Gap(2).Align(Align.BottomCenter).Width(Size.Full())
