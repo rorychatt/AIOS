@@ -22,28 +22,37 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                let mut buffer = [0; 512];
+                let mut buffer = [0; 4096];
                 if let Ok(size) = stream.read(&mut buffer) {
-                    let request = String::from_utf8_lossy(&buffer[..size]);
-                    println!("Received command from CLI: {}", request.trim());
-
-                    // Dummy context
-                    let context = SystemContext {
-                        active_directory: "/workspace".to_string(),
-                        user_id: "agent_01".to_string(),
-                        permissions: vec!["fs.read".to_string()],
-                    };
-
-                    let intent = Intent {
-                        raw_text: request.trim().to_string(),
-                        target_capability: Some("List".to_string()), // hardcoded for demo
-                        parameters: HashMap::new(),
-                    };
-
-                    let result = fs_plugin.execute(&intent, &context);
+                    let request_str = String::from_utf8_lossy(&buffer[..size]);
                     
-                    let response = format!("Result: {}\n", result.output);
-                    stream.write_all(response.as_bytes()).unwrap();
+                    match serde_json::from_str::<Intent>(&request_str) {
+                        Ok(intent) => {
+                            println!("Received Intent: {:?}", intent);
+
+                            // Dummy context
+                            let context = SystemContext {
+                                active_directory: "/workspace".to_string(),
+                                user_id: "agent_01".to_string(),
+                                permissions: vec!["fs.read".to_string()],
+                            };
+
+                            let result = fs_plugin.execute(&intent, &context);
+                            
+                            let response_json = serde_json::to_string(&result).unwrap() + "\n";
+                            stream.write_all(response_json.as_bytes()).unwrap();
+                        }
+                        Err(e) => {
+                            println!("Failed to parse intent JSON: {}", e);
+                            let error_result = aios_core::models::ExecutionResult {
+                                success: false,
+                                output: "".to_string(),
+                                error: Some(format!("Invalid JSON format: {}", e)),
+                            };
+                            let response_json = serde_json::to_string(&error_result).unwrap() + "\n";
+                            stream.write_all(response_json.as_bytes()).unwrap();
+                        }
+                    }
                 }
             }
             Err(e) => {

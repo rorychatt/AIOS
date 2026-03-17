@@ -1,8 +1,9 @@
 pub mod models {
+    use serde::{Serialize, Deserialize};
     use std::collections::HashMap;
 
     /// An intent is the high-level goal an agent or human is trying to achieve.
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Intent {
         pub raw_text: String,
         pub target_capability: Option<String>,
@@ -10,7 +11,7 @@ pub mod models {
     }
 
     /// System context that is injected into executing commands (MCP analog).
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct SystemContext {
         pub active_directory: String,
         pub user_id: String,
@@ -18,7 +19,7 @@ pub mod models {
     }
 
     /// The result of an executed capability.
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ExecutionResult {
         pub success: bool,
         pub output: String,
