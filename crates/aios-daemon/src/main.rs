@@ -80,45 +80,7 @@ fn main() {
                                 // Fallback: Route through LLM!
                                 println!("No exact match for capability, routing to LLM...");
                                 let router = LlmRouterApp;
-                                let llm_response = router.execute(&intent, &context);
-
-                                if llm_response.success
-                                    && llm_response.output.starts_with("[ROUTE]:")
-                                {
-                                    let mut new_intent = intent.clone();
-                                    
-                                    let output_str = llm_response.output.replace("[ROUTE]:", "").trim().to_string();
-                                    let parts: Vec<&str> = output_str.splitn(2, '|').collect();
-                                    
-                                    let predicted_cap = parts[0].trim().to_string();
-                                    new_intent.target_capability = Some(predicted_cap.clone());
-                                    
-                                    if parts.len() > 1 {
-                                        if let Ok(parsed_json) = serde_json::from_str::<serde_json::Value>(parts[1].trim()) {
-                                            if let Some(obj) = parsed_json.as_object() {
-                                                for (k, v) in obj {
-                                                    if let Some(s) = v.as_str() {
-                                                        new_intent.parameters.insert(k.clone(), s.to_string());
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    println!("LLM suggested route: {} with parameters: {:?}", predicted_cap, new_intent.parameters);
-
-                                    if predicted_cap == "List" || predicted_cap == "Read" || predicted_cap == "Write" || predicted_cap == "CreateFolder" {
-                                        final_result = fs_plugin.execute(&new_intent, &context);
-                                    } else if predicted_cap == "Ps" || predicted_cap == "Kill" {
-                                        final_result = proc_plugin.execute(&new_intent, &context);
-                                    } else if predicted_cap == "IfConfig" {
-                                        final_result = net_plugin.execute(&new_intent, &context);
-                                    } else {
-                                        final_result = llm_response; // Give conversational output back
-                                    }
-                                } else {
-                                    final_result = llm_response; // pure conversational response
-                                }
+                                final_result = router.execute(&intent, &context);
                             }
 
                             let mut response_yaml = serde_yaml::to_string(&final_result).unwrap();

@@ -19,13 +19,19 @@ impl AiosNativeApp for LlmRouterApp {
             .get("intent_text")
             .unwrap_or(&intent.raw_text);
 
-        // We use serde_json for the HTTP payload natively now that we don't need to force YAML structures through the API layer
         let payload = serde_json::json!({
             "model": model,
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are AIOS, the conversational AI-first Operating System kernel. The user is talking to you via a terminal. You can answer their questions naturally. If they ask to perform an action (like reading/writing files, viewing network, or checking processes), you MUST reply EXACTLY with `[ROUTE]: <Capability> | <JSON_Parameters>`. Example: `[ROUTE]: Write | {\"path\": \"file.txt\", \"content\": \"hello\"}` or `[ROUTE]: Ps | {}`. Available capabilities: List, Read, Write, CreateFolder, Ps, Kill, IfConfig. Do not output anything else if you are routing an action."
+                    "content": "You are AIOS, the conversational AI-first Operating System kernel. The user is talking to you via a terminal. You can answer their questions naturally. If you need to perform actions on the OS itself to answer their question, output the exact CLI command to run inside a `[COMMAND]` block, like: `[COMMAND] aios-cli fs list . [/COMMAND]`. Available commands: \
+                    `aios-cli fs list <path>`, \
+                    `aios-cli fs read <file>`, \
+                    `aios-cli fs write <path> <content>`, \
+                    `aios-cli fs create-folder <path>`, \
+                    `aios-cli proc ps`, \
+                    `aios-cli proc kill <pid>`, \
+                    `aios-cli net ifconfig`. Do not output anything else in the block."
                 },
                 {
                     "role": "user",
@@ -49,9 +55,54 @@ impl AiosNativeApp for LlmRouterApp {
                     match response.json::<serde_json::Value>() {
                         Ok(json) => {
                             if let Some(content) = json["message"]["content"].as_str() {
+                                // If the LLM successfully emitted a command block, we intercept it here to run the sub-process!
+                                if content.contains("[COMMAND]") && content.contains("[/COMMAND]") {
+                                    let start = content.find("[COMMAND]").unwrap() + 9;
+                                    let end = content.find("[/COMMAND]").unwrap();
+                                    
+                                    let command_str = &content[start..end].trim();
+                                    println!("LLM decided to run: {}", command_str);
+                                    
+                                    // Parse aios-cli arguments
+                                    let mut parts = command_str.split_whitespace();
+                                    let base_cmd = parts.next().unwrap_or("");
+                                    
+                                    if base_cmd == "aios-cli" {
+                                        let args: Vec<&str> = parts.collect();
+                                        
+                                        // Spin up a subprocess executing the aios-cli command locally!
+                                        match std::process::Command::new("cargo")
+                                            .arg("run")
+                                            .arg("--bin")
+                                            .arg("aios-cli")
+                                            .args(args)
+                                            .output() 
+                                        {
+                                            Ok(output) => {
+                                                let stdout = String::from_utf8_lossy(&output.stdout);
+                                                let stderr = String::from_utf8_lossy(&output.stderr);
+                                                let final_out = if stderr.is_empty() { stdout.to_string() } else { format!("{}\n{}", stdout, stderr) };
+                                                
+                                                return ExecutionResult {
+                                                    success: true,
+                                                    output: final_out,
+                                                    error: None,
+                                                };
+                                            },
+                                            Err(e) => {
+                                                return ExecutionResult {
+                                                    success: false,
+                                                    output: "".to_string(),
+                                                    error: Some(format!("Failed to execute CLI Subprocess: {}", e)),
+                                                };
+                                            }
+                                        }
+                                    }
+                                }
+                                
                                 ExecutionResult {
                                     success: true,
-                                    output: content.to_string(), // Return the conversational or route string directly
+                                    output: content.to_string(),
                                     error: None,
                                 }
                             } else {

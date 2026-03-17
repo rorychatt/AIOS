@@ -27,31 +27,105 @@ fn main() {
     }
 
     if args.len() < 3 {
-        println!("Usage: aios-cli <target_capability> <raw_text> [param1=val1 ...]");
+        println!("Usage: aios-cli <subcommand> [args]");
         println!("       aios-cli start");
         println!("       aios-cli stop");
+        println!("       aios-cli fs list <path>");
+        println!("       aios-cli fs read <path>");
+        println!("       aios-cli fs write <path> <content>");
+        println!("       aios-cli fs create-folder <path>");
+        println!("       aios-cli proc ps");
+        println!("       aios-cli proc kill <pid>");
+        println!("       aios-cli net ifconfig");
         return;
     }
 
-    // Direct CLI execution mode
-    let target_cap = command;
-    let raw_text = args[2].clone();
+    let module = args[1].clone();
+    let action = args[2].clone();
+    
+    let mut intent = Intent {
+        raw_text: args.join(" "),
+        target_capability: None,
+        parameters: HashMap::new(),
+    };
 
-    let mut params = HashMap::new();
-    for arg in args.iter().skip(3) {
-        let parts: Vec<&str> = arg.splitn(2, '=').collect();
-        if parts.len() == 2 {
-            params.insert(parts[0].to_string(), parts[1].to_string());
+    match module.as_str() {
+        "fs" => {
+            match action.as_str() {
+                "list" => {
+                    intent.target_capability = Some("List".to_string());
+                    if args.len() > 3 {
+                        intent.parameters.insert("path".to_string(), args[3].clone());
+                    }
+                }
+                "read" => {
+                    intent.target_capability = Some("Read".to_string());
+                    if args.len() > 3 {
+                        intent.parameters.insert("path".to_string(), args[3].clone());
+                    }
+                }
+                "write" => {
+                    intent.target_capability = Some("Write".to_string());
+                    if args.len() > 3 {
+                        intent.parameters.insert("path".to_string(), args[3].clone());
+                    }
+                    if args.len() > 4 {
+                        intent.parameters.insert("content".to_string(), args[4].clone());
+                    }
+                }
+                "create-folder" => {
+                    intent.target_capability = Some("CreateFolder".to_string());
+                    if args.len() > 3 {
+                        intent.parameters.insert("path".to_string(), args[3].clone());
+                    }
+                }
+                _ => {
+                    println!("Unknown fs action: {}", action);
+                    return;
+                }
+            }
+        }
+        "proc" => {
+            match action.as_str() {
+                "ps" => {
+                    intent.target_capability = Some("Ps".to_string());
+                }
+                "kill" => {
+                    intent.target_capability = Some("Kill".to_string());
+                    if args.len() > 3 {
+                        intent.parameters.insert("pid".to_string(), args[3].clone());
+                    }
+                }
+                _ => {
+                    println!("Unknown proc action: {}", action);
+                    return;
+                }
+            }
+        }
+        "net" => {
+             match action.as_str() {
+                "ifconfig" => {
+                    intent.target_capability = Some("IfConfig".to_string());
+                }
+                 _ => {
+                    println!("Unknown net action: {}", action);
+                    return;
+                }
+             }
+        }
+        _ => {
+            // Direct capability mode fallback (Legacy)
+            intent.target_capability = Some(module);
+            intent.raw_text = action;
+            for arg in args.iter().skip(3) {
+                let parts: Vec<&str> = arg.splitn(2, '=').collect();
+                if parts.len() == 2 {
+                    intent.parameters.insert(parts[0].to_string(), parts[1].to_string());
+                }
+            }
         }
     }
 
-    let intent = Intent {
-        raw_text: raw_text.clone(),
-        target_capability: Some(target_cap),
-        parameters: params,
-    };
-
-    println!("Calling AIOS Daemon with Intent: '{}'", raw_text);
     send_intent(intent);
 }
 
