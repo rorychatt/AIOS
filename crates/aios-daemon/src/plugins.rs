@@ -36,8 +36,28 @@ impl AiosNativeApp for FileSystemApp {
                 let target_dir = intent
                     .parameters
                     .get("path")
-                    .unwrap_or(&context.active_directory);
-                match fs::read_dir(target_dir) {
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
+                    
+                let full_path = Path::new(&context.active_directory).join(target_dir);
+                
+                if let (Ok(canonical_full), Ok(canonical_dir)) = (full_path.canonicalize(), Path::new(&context.active_directory).canonicalize()) {
+                    if !canonical_full.starts_with(&canonical_dir) {
+                        return ExecutionResult {
+                            success: false,
+                            output: "".to_string(),
+                            error: Some("Security Error: Path traversal outside active directory forbidden".to_string()),
+                        };
+                    }
+                } else {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some("Security Error: Invalid directory or does not exist".to_string()),
+                    };
+                }
+
+                match fs::read_dir(&full_path) {
                     Ok(entries) => {
                         let mut files = Vec::new();
                         for entry in entries.flatten() {
