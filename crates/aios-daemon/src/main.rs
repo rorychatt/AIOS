@@ -46,8 +46,13 @@ fn main() {
                         Ok(intent) => {
                             println!("Received Intent via YAML: {:?}", intent);
 
-                            // Dummy context
-                            let current_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+                            // Sandboxed context
+                            let mut current_dir = dirs::home_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
+                            current_dir.push(".aios");
+                            if !current_dir.exists() {
+                                std::fs::create_dir_all(&current_dir).unwrap_or_else(|_| println!("Warning: Failed to create ~/.aios"));
+                            }
+                            
                             let context = SystemContext {
                                 active_directory: current_dir.to_string_lossy().to_string(),
                                 user_id: "agent_01".to_string(),
