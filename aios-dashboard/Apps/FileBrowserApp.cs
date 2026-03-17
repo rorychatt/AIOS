@@ -70,11 +70,13 @@ public class FileBrowserApp : ViewBase
                             } else {
                                 currentPath.Set(".");
                             }
+                            selectedFile.Set(null);
                         } else if (tag.EndsWith("/")) {
                             // Selected a folder, navigate into it
                             var folderName = tag.Substring(0, tag.Length - 1);
                             var newPath = currentPath.Value == "." ? folderName : $"{currentPath.Value}/{folderName}";
                             currentPath.Set(newPath);
+                            selectedFile.Set(null);
                         } else {
                             // Selected a file, update view
                             var filePath = currentPath.Value == "." ? tag : $"{currentPath.Value}/{tag}";
