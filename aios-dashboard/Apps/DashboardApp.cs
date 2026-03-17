@@ -2,7 +2,7 @@ using AiosDashboard.Connections;
 
 namespace AiosDashboard.Apps;
 
-public record ChatMessage(string Role, string Content);
+public record AiosChatMessage(string Author, string Text);
 
 [App(icon: Icons.Cpu, title: "AIOS Dashboard")]
 public class DashboardApp : ViewBase
@@ -11,8 +11,8 @@ public class DashboardApp : ViewBase
     {
         var daemonClient = UseService<AiosDaemonClient>();
         var inputState = UseState("");
-        var messagesState = UseState<List<ChatMessage>>([
-            new ChatMessage("System", "AIOS Dashboard connected. How can I help you today?")
+        var messagesState = UseState<List<AiosChatMessage>>([
+            new AiosChatMessage("System", "AIOS Dashboard connected. How can I help you today?")
         ]);
         var isProcessing = UseState(false);
 
@@ -33,43 +33,30 @@ public class DashboardApp : ViewBase
             )
             | (Layout.Vertical().Gap(4).Size(Size.Full()) // Main content / Chat
                 | Text.H2("Terminal Session")
-                | (new Card(
-                    Layout.Vertical().Gap(4).Size(Size.Full())
-                    | (Layout.Vertical().Gap(4).Size(Size.Full()).Align(Align.TopLeft)
-                        | messagesState.Value.Select(m => 
-                            Layout.Horizontal()
-                                .Width(Size.Full())
-                                .Align(m.Role == "User" ? Align.Right : Align.Left)
-                            | new Callout(m.Content)
-                                .Title(m.Role)
-                        )
-                    )
-                    | (Layout.Horizontal().Gap(2).Align(Align.BottomCenter).Width(Size.Full())
-                        | inputState.ToTextInput().Placeholder("Type a command or ask a question...")
-                        | new Button("Send").Primary().Disabled(isProcessing.Value).OnClick(async () => {
-                            if (string.IsNullOrWhiteSpace(inputState.Value)) return;
-                            
-                            var userText = inputState.Value;
-                            inputState.Set("");
-                            
-                            var newList = new List<ChatMessage>(messagesState.Value) {
-                                new ChatMessage("User", userText)
-                            };
-                            messagesState.Set(newList);
-                            
-                            isProcessing.Set(true);
-                            
-                            var result = await daemonClient.SendIntentAsync(userText);
-                            
-                            var updatedList = new List<ChatMessage>(messagesState.Value) {
-                                new ChatMessage("AIOS", result.Success ? result.Output : $"Error: {result.Error}")
-                            };
-                            messagesState.Set(updatedList);
-                            
-                            isProcessing.Set(false);
-                        })
-                    )
-                ).Size(Size.Full()))
+                | new Chat(
+                    messagesState.Value.Select(m => new Ivy.ChatMessage(m.Author == "User" ? ChatSender.User : ChatSender.Assistant, m.Text)).ToArray(),
+                    onSend: async (e) => {
+                        var text = e.Value;
+                        if (string.IsNullOrWhiteSpace(text)) return;
+                        
+                        var newList = new List<AiosChatMessage>(messagesState.Value) {
+                            new AiosChatMessage("User", text)
+                        };
+                        messagesState.Set(newList);
+                        
+                        isProcessing.Set(true);
+                        var result = await daemonClient.SendIntentAsync(text);
+                        
+                        var updatedList = new List<AiosChatMessage>(messagesState.Value) {
+                            new AiosChatMessage("AIOS", result.Success ? result.Output : $"Error: {result.Error}")
+                        };
+                        messagesState.Set(updatedList);
+                        isProcessing.Set(false);
+                    }
+                ).Size(Size.Full())
+
             );
+
     }
 }
+
