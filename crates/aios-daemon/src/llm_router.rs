@@ -21,44 +21,62 @@ impl AiosNativeApp for LlmRouterApp {
             .get("intent_text")
             .unwrap_or(&intent.raw_text);
 
-        let payload = serde_json::json!({
-            "model": model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are AIOS, the conversational AI-first Operating System kernel. The user is talking to you via a terminal. You can answer their questions naturally. If you need to perform actions on the OS itself to answer their question, output the exact CLI command to run inside a `[COMMAND]` block, like: `[COMMAND] aios-cli fs list . [/COMMAND]`. Available commands: \
-                    `aios-cli fs list <path>`, \
-                    `aios-cli fs read <file>`, \
-                    `aios-cli fs write <path> <content>` (use this BOTH for creating new files and modifying existing ones), \
-                    `aios-cli fs create-folder <path>`, \
-                    `aios-cli fs delete <path>`, \
-                    `aios-cli proc ps`, \
-                    `aios-cli proc kill <pid>`, \
-                    `aios-cli net ifconfig`. Do not output anything else in the block."
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
-            ],
-            "stream": false
-        });
+        let mut messages = vec![
+            serde_json::json!({
+                "role": "system",
+                "content": "You are AIOS, the conversational AI-first Operating System kernel. The user is talking to you via a terminal. You can answer their questions naturally. If you need to perform actions on the OS itself to answer their question, output the exact CLI command to run inside a `[COMMAND]` block, like: `[COMMAND] aios-cli fs list . [/COMMAND]`. Available commands: \
+                `aios-cli fs list <path>`, \
+                `aios-cli fs read <file>`, \
+                `aios-cli fs write <path> <content>` (use this BOTH for creating new files and modifying existing ones), \
+                `aios-cli fs create-folder <path>`, \
+                `aios-cli fs delete <path>`, \
+                `aios-cli proc ps`, \
+                `aios-cli proc kill <pid>`, \
+                `aios-cli net ifconfig`. Do not output anything else in the block."
+            }),
+            serde_json::json!({
+                "role": "user",
+                "content": user_prompt
+            }),
+        ];
 
-        // Blocking HTTP call to local Ollama
+        // Locate the compiled `aios-cli` binary alongside the running `aios-daemon` binary once
+        let exe_path = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("aios-daemon"));
+        let mut cli_path = exe_path.parent().unwrap_or(std::path::Path::new(".")).to_path_buf();
+        #[cfg(target_os = "windows")]
+        cli_path.push("aios-cli.exe");
+        #[cfg(not(target_os = "windows"))]
+        cli_path.push("aios-cli");
+        let cli_path_str = cli_path.to_string_lossy().to_string();
+
         let client = reqwest::blocking::Client::new();
-        let res = client
-            .post("http://127.0.0.1:11434/api/chat")
-            .header("Content-Type", "application/json")
-            .json(&payload)
-            .send();
 
-        match res {
-            Ok(response) => {
-                if response.status().is_success() {
+        for i in 0..5 {
+            let payload = serde_json::json!({
+                "model": model,
+                "messages": messages,
+                "stream": false
+            });
+
+            let res = client
+                .post("http://127.0.0.1:11434/api/chat")
+                .header("Content-Type", "application/json")
+                .json(&payload)
+                .send();
+
+            match res {
+                Ok(response) => {
+                    if !response.status().is_success() {
+                        return ExecutionResult {
+                            success: false,
+                            output: "".to_string(),
+                            error: Some(format!("Ollama returned an HTTP {}", response.status())),
+                        };
+                    }
+
                     match response.json::<serde_json::Value>() {
                         Ok(json) => {
                             if let Some(content) = json["message"]["content"].as_str() {
-                                // If the LLM successfully emitted a command block, we intercept it here to run the sub-process!
                                 if content.contains("[COMMAND]") {
                                     let start = content.find("[COMMAND]").unwrap() + 9;
                                     let command_str = if let Some(end) = content.find("[/COMMAND]") {
@@ -67,22 +85,10 @@ impl AiosNativeApp for LlmRouterApp {
                                         &content[start..]
                                     };
                                     let command_str = command_str.trim();
-                                    println!("LLM decided to run: {}", command_str);
+                                    println!("Step {}: LLM decided to run: {}", i + 1, command_str);
                                     
-                                    // Locate the compiled `aios-cli` binary alongside the running `aios-daemon` binary
-                                    let exe_path = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("aios-daemon"));
-                                    let mut cli_path = exe_path.parent().unwrap_or(std::path::Path::new(".")).to_path_buf();
-                                    
-                                    #[cfg(target_os = "windows")]
-                                    cli_path.push("aios-cli.exe");
-                                    #[cfg(not(target_os = "windows"))]
-                                    cli_path.push("aios-cli");
-                                    
-                                    let cli_path_str = cli_path.to_string_lossy().to_string();
-
-                                    // We must use the exact absolute path to `aios-cli` because the subprocess runs inside `~/.aios/` 
-                                    // where `cargo run` cannot find a `Cargo.toml`.
-                                    let safe_cmd = command_str.replacen("aios-cli", &format!("\"{}\"", cli_path_str), 1);
+                                    // Use replace() for ALL occurrences to support chained commands.
+                                    let safe_cmd = command_str.replace("aios-cli", &format!("\"{}\"", cli_path_str));
                                     
                                     #[cfg(target_os = "windows")]
                                     let output_res = std::process::Command::new("cmd")
@@ -102,54 +108,61 @@ impl AiosNativeApp for LlmRouterApp {
                                             let stderr = String::from_utf8_lossy(&output.stderr);
                                             let final_out = if stderr.trim().is_empty() { stdout.to_string() } else { format!("{}\n{}", stdout, stderr) };
                                             
-                                            return ExecutionResult {
-                                                success: true,
-                                                output: final_out,
-                                                error: None,
-                                            };
+                                            // Append assistant response and tool output to history for next iteration
+                                            messages.push(serde_json::json!({
+                                                "role": "assistant",
+                                                "content": content
+                                            }));
+                                            messages.push(serde_json::json!({
+                                                "role": "user",
+                                                "content": format!("COMMAND OUTPUT:\n{}", final_out)
+                                            }));
+                                            
+                                            println!("Agentic loop continuing to next iteration...");
+                                            continue;
                                         },
                                         Err(e) => {
                                             return ExecutionResult {
                                                 success: false,
                                                 output: "".to_string(),
-                                                error: Some(format!("Failed to execute CLI Subprocess via shell: {}", e)),
+                                                error: Some(format!("Failed to execute CLI Subprocess: {}", e)),
                                             };
                                         }
                                     }
                                 }
                                 
-                                ExecutionResult {
+                                return ExecutionResult {
                                     success: true,
                                     output: content.to_string(),
                                     error: None,
-                                }
+                                };
                             } else {
-                                ExecutionResult {
+                                return ExecutionResult {
                                     success: false,
                                     output: "".to_string(),
-                                    error: Some("Malformed response from Ollama".to_string()),
-                                }
+                                    error: Some("Malformed response from Ollama (no content)".to_string()),
+                                };
                             }
                         }
-                        Err(e) => ExecutionResult {
+                        Err(e) => return ExecutionResult {
                             success: false,
                             output: "".to_string(),
                             error: Some(format!("Failed to parse Ollama JSON: {}", e)),
                         },
                     }
-                } else {
-                    ExecutionResult {
-                        success: false,
-                        output: "".to_string(),
-                        error: Some(format!("Ollama returned an HTTP {}", response.status())),
-                    }
                 }
+                Err(e) => return ExecutionResult {
+                    success: false,
+                    output: "".to_string(),
+                    error: Some(format!("Request to Ollama failed: {}", e)),
+                },
             }
-            Err(e) => ExecutionResult {
-                success: false,
-                output: "".to_string(),
-                error: Some(format!("Request to OpenAI failed: {}", e)),
-            },
+        }
+
+        ExecutionResult {
+            success: false,
+            output: "".to_string(),
+            error: Some("Error: Agentic loop limit reached (5 iterations) without a final answer.".to_string()),
         }
     }
 }
