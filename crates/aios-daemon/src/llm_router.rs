@@ -12,7 +12,7 @@ impl AiosNativeApp for LlmRouterApp {
         vec!["Route intent to OpenAI for reasoning [Route(intent_text)]".to_string()]
     }
 
-    fn execute(&self, intent: &Intent, _context: &SystemContext) -> ExecutionResult {
+    fn execute(&self, intent: &Intent, context: &SystemContext) -> ExecutionResult {
         let model = std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "llama3".to_string());
         let user_prompt = intent
             .parameters
@@ -73,11 +73,13 @@ impl AiosNativeApp for LlmRouterApp {
                                     #[cfg(target_os = "windows")]
                                     let output_res = std::process::Command::new("cmd")
                                         .args(["/C", &safe_cmd])
+                                        .current_dir(&context.active_directory)
                                         .output();
 
                                     #[cfg(not(target_os = "windows"))]
                                     let output_res = std::process::Command::new("sh")
                                         .args(["-c", &safe_cmd])
+                                        .current_dir(&context.active_directory)
                                         .output();
 
                                     match output_res {
