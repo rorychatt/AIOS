@@ -40,6 +40,20 @@ fn main() {
         return;
     }
 
+    match parse_args_to_intent(&args) {
+        Ok(intent) => send_intent(intent),
+        Err(e) => {
+            println!("{}", e);
+            return;
+        }
+    }
+}
+
+pub fn parse_args_to_intent(args: &[String]) -> Result<Intent, String> {
+    if args.len() < 3 {
+        return Err("Not enough arguments for a subcommand".to_string());
+    }
+
     let module = args[1].clone();
     let action = args[2].clone();
     
@@ -65,6 +79,7 @@ fn main() {
                     }
                 }
                 "write" => {
+                    // LLM might hallucinate "create-file", we map it to "Write" just in case.
                     intent.target_capability = Some("Write".to_string());
                     if args.len() > 3 {
                         intent.parameters.insert("path".to_string(), args[3].clone());
@@ -80,8 +95,18 @@ fn main() {
                     }
                 }
                 _ => {
-                    println!("Unknown fs action: {}", action);
-                    return;
+                    // Gracefully alias create-file to write if the LLM hallucinated it.
+                    if action == "create-file" {
+                        intent.target_capability = Some("Write".to_string());
+                        if args.len() > 3 {
+                            intent.parameters.insert("path".to_string(), args[3].clone());
+                        }
+                        if args.len() > 4 {
+                            intent.parameters.insert("content".to_string(), args[4].clone());
+                        }
+                    } else {
+                        return Err(format!("Unknown fs action: {}", action));
+                    }
                 }
             }
         }
@@ -97,8 +122,7 @@ fn main() {
                     }
                 }
                 _ => {
-                    println!("Unknown proc action: {}", action);
-                    return;
+                    return Err(format!("Unknown proc action: {}", action));
                 }
             }
         }
@@ -108,8 +132,7 @@ fn main() {
                     intent.target_capability = Some("IfConfig".to_string());
                 }
                  _ => {
-                    println!("Unknown net action: {}", action);
-                    return;
+                    return Err(format!("Unknown net action: {}", action));
                 }
              }
         }
@@ -126,7 +149,7 @@ fn main() {
         }
     }
 
-    send_intent(intent);
+    Ok(intent)
 }
 
 fn run_repl() {
@@ -299,5 +322,68 @@ mod tests {
         assert!(yaml.contains("Read file"));
         assert!(yaml.contains("foo.txt"));
         assert!(yaml.contains("target_capability"));
+    }
+
+    #[test]
+    fn test_parse_fs_list() {
+        let args = vec!["aios-cli".to_string(), "fs".to_string(), "list".to_string(), ".".to_string()];
+        let intent = parse_args_to_intent(&args).unwrap();
+        assert_eq!(intent.target_capability, Some("List".to_string()));
+        assert_eq!(intent.parameters.get("path").unwrap(), ".");
+    }
+
+    #[test]
+    fn test_parse_fs_read() {
+        let args = vec!["aios-cli".to_string(), "fs".to_string(), "read".to_string(), "file.txt".to_string()];
+        let intent = parse_args_to_intent(&args).unwrap();
+        assert_eq!(intent.target_capability, Some("Read".to_string()));
+        assert_eq!(intent.parameters.get("path").unwrap(), "file.txt");
+    }
+
+    #[test]
+    fn test_parse_fs_write() {
+        let args = vec!["aios-cli".to_string(), "fs".to_string(), "write".to_string(), "file.txt".to_string(), "content_here".to_string()];
+        let intent = parse_args_to_intent(&args).unwrap();
+        assert_eq!(intent.target_capability, Some("Write".to_string()));
+        assert_eq!(intent.parameters.get("path").unwrap(), "file.txt");
+        assert_eq!(intent.parameters.get("content").unwrap(), "content_here");
+    }
+
+    #[test]
+    fn test_parse_fs_create_folder() {
+        let args = vec!["aios-cli".to_string(), "fs".to_string(), "create-folder".to_string(), "new_dir".to_string()];
+        let intent = parse_args_to_intent(&args).unwrap();
+        assert_eq!(intent.target_capability, Some("CreateFolder".to_string()));
+        assert_eq!(intent.parameters.get("path").unwrap(), "new_dir");
+    }
+
+    #[test]
+    fn test_parse_hallucinated_create_file() {
+        let args = vec!["aios-cli".to_string(), "fs".to_string(), "create-file".to_string(), "file.txt".to_string(), "hello".to_string()];
+        let intent = parse_args_to_intent(&args).unwrap();
+        assert_eq!(intent.target_capability, Some("Write".to_string()));
+        assert_eq!(intent.parameters.get("path").unwrap(), "file.txt");
+    }
+
+    #[test]
+    fn test_parse_proc_ps() {
+        let args = vec!["aios-cli".to_string(), "proc".to_string(), "ps".to_string()];
+        let intent = parse_args_to_intent(&args).unwrap();
+        assert_eq!(intent.target_capability, Some("Ps".to_string()));
+    }
+
+    #[test]
+    fn test_parse_proc_kill() {
+        let args = vec!["aios-cli".to_string(), "proc".to_string(), "kill".to_string(), "1234".to_string()];
+        let intent = parse_args_to_intent(&args).unwrap();
+        assert_eq!(intent.target_capability, Some("Kill".to_string()));
+        assert_eq!(intent.parameters.get("pid").unwrap(), "1234");
+    }
+
+    #[test]
+    fn test_parse_net_ifconfig() {
+        let args = vec!["aios-cli".to_string(), "net".to_string(), "ifconfig".to_string()];
+        let intent = parse_args_to_intent(&args).unwrap();
+        assert_eq!(intent.target_capability, Some("IfConfig".to_string()));
     }
 }

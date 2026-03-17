@@ -27,7 +27,7 @@ impl AiosNativeApp for LlmRouterApp {
                     "content": "You are AIOS, the conversational AI-first Operating System kernel. The user is talking to you via a terminal. You can answer their questions naturally. If you need to perform actions on the OS itself to answer their question, output the exact CLI command to run inside a `[COMMAND]` block, like: `[COMMAND] aios-cli fs list . [/COMMAND]`. Available commands: \
                     `aios-cli fs list <path>`, \
                     `aios-cli fs read <file>`, \
-                    `aios-cli fs write <path> <content>`, \
+                    `aios-cli fs write <path> <content>` (use this BOTH for creating new files and modifying existing ones), \
                     `aios-cli fs create-folder <path>`, \
                     `aios-cli proc ps`, \
                     `aios-cli proc kill <pid>`, \
@@ -56,11 +56,15 @@ impl AiosNativeApp for LlmRouterApp {
                         Ok(json) => {
                             if let Some(content) = json["message"]["content"].as_str() {
                                 // If the LLM successfully emitted a command block, we intercept it here to run the sub-process!
-                                if content.contains("[COMMAND]") && content.contains("[/COMMAND]") {
+                                if content.contains("[COMMAND]") {
                                     let start = content.find("[COMMAND]").unwrap() + 9;
-                                    let end = content.find("[/COMMAND]").unwrap();
+                                    let command_str = if let Some(end) = content.find("[/COMMAND]") {
+                                        &content[start..end]
+                                    } else {
+                                        &content[start..]
+                                    };
+                                    let command_str = command_str.trim();
                                     
-                                    let command_str = &content[start..end].trim();
                                     println!("LLM decided to run: {}", command_str);
                                     
                                     // Parse aios-cli arguments
