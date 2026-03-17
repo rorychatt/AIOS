@@ -16,6 +16,7 @@ impl AiosNativeApp for FileSystemApp {
             "Read file contents [Read(path)]".to_string(),
             "Write string to file [Write(path, content)]".to_string(),
             "Create a new folder [CreateFolder(path)]".to_string(),
+            "Delete a file or folder [Delete(path)]".to_string(),
         ]
     }
 
@@ -266,6 +267,76 @@ impl AiosNativeApp for FileSystemApp {
                         success: false,
                         output: "".to_string(),
                         error: Some(format!("Failed to create folder: {}", e)),
+                    },
+                }
+            }
+            "Delete" => {
+                if !context.permissions.contains(&"fs.write".to_string()) {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some(
+                            "Permission Denied: Missing 'fs.write' in SystemContext"
+                                .to_string(),
+                        ),
+                    };
+                }
+
+                let target = intent
+                    .parameters
+                    .get("path")
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
+
+                if target.is_empty() {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some("Missing 'path' parameter for Delete capability".to_string()),
+                    };
+                }
+
+                let safe_target = target.trim_start_matches(|c| c == '/' || c == '\\');
+                let full_path = Path::new(&context.active_directory).join(safe_target);
+
+                if let (Ok(canonical_full), Ok(canonical_dir)) = (
+                    full_path.canonicalize(),
+                    Path::new(&context.active_directory).canonicalize(),
+                ) {
+                    if !canonical_full.starts_with(&canonical_dir) {
+                        return ExecutionResult {
+                            success: false,
+                            output: "".to_string(),
+                            error: Some(
+                                "Security Error: Path traversal outside active directory forbidden"
+                                    .to_string(),
+                            ),
+                        };
+                    }
+                } else {
+                    return ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some("Security Error: Invalid path or does not exist".to_string()),
+                    };
+                }
+
+                let res = if full_path.is_dir() {
+                    fs::remove_dir_all(&full_path)
+                } else {
+                    fs::remove_file(&full_path)
+                };
+
+                match res {
+                    Ok(_) => ExecutionResult {
+                        success: true,
+                        output: format!("Successfully deleted: '{}'", target),
+                        error: None,
+                    },
+                    Err(e) => ExecutionResult {
+                        success: false,
+                        output: "".to_string(),
+                        error: Some(format!("Failed to delete: {}", e)),
                     },
                 }
             }

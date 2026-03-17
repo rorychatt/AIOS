@@ -1,18 +1,13 @@
    Compiling aios-daemon v0.1.0 (D:\git\rorychatt\AIOS\crates\aios-daemon)
-error[E0425]: cannot find value `context` in this scope
-  --> crates\aios-daemon\src\llm_router.rs:76:55
-   |
-15 |     fn execute(&self, intent: &Intent, _context: &SystemContext) -> ExecutionResult {
-   |                                        -------- `_context` defined here
+error: unexpected closing delimiter: `}`
+   --> crates\aios-daemon\src\main.rs:120:1
+    |
+ 50 | fn handle_client(mut stream: std::net::TcpStream) {
+    |                                                   - this opening brace...
 ...
-76 |                                         .current_dir(&context.active_directory)
-   |                                                       ^^^^^^^
-   |
-help: the leading underscore in `_context` marks it as unused, consider renaming it to `context`
-   |
-15 -     fn execute(&self, intent: &Intent, _context: &SystemContext) -> ExecutionResult {
-15 +     fn execute(&self, intent: &Intent, context: &SystemContext) -> ExecutionResult {
-   |
+119 | }
+    | - ...matches this closing brace
+120 | }
+    | ^ unexpected closing delimiter
 
-For more information about this error, try `rustc --explain E0425`.
 error: could not compile `aios-daemon` (bin "aios-daemon") due to 1 previous error

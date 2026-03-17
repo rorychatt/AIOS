@@ -34,6 +34,7 @@ fn main() {
         println!("       aios-cli fs read <path>");
         println!("       aios-cli fs write <path> <content>");
         println!("       aios-cli fs create-folder <path>");
+        println!("       aios-cli fs delete <path>");
         println!("       aios-cli proc ps");
         println!("       aios-cli proc kill <pid>");
         println!("       aios-cli net ifconfig");
@@ -90,6 +91,12 @@ pub fn parse_args_to_intent(args: &[String]) -> Result<Intent, String> {
                 }
                 "create-folder" => {
                     intent.target_capability = Some("CreateFolder".to_string());
+                    if args.len() > 3 {
+                        intent.parameters.insert("path".to_string(), args[3].clone());
+                    }
+                }
+                "delete" => {
+                    intent.target_capability = Some("Delete".to_string());
                     if args.len() > 3 {
                         intent.parameters.insert("path".to_string(), args[3].clone());
                     }
@@ -385,5 +392,18 @@ mod tests {
         let args = vec!["aios-cli".to_string(), "net".to_string(), "ifconfig".to_string()];
         let intent = parse_args_to_intent(&args).unwrap();
         assert_eq!(intent.target_capability, Some("IfConfig".to_string()));
+    }
+
+    #[test]
+    fn test_parse_fs_delete() {
+        let args = vec![
+            "aios-cli".to_string(),
+            "fs".to_string(),
+            "delete".to_string(),
+            "old_file.txt".to_string(),
+        ];
+        let intent = parse_args_to_intent(&args).unwrap();
+        assert_eq!(intent.target_capability, Some("Delete".to_string()));
+        assert_eq!(intent.parameters.get("path").unwrap(), "old_file.txt");
     }
 }

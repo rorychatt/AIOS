@@ -86,7 +86,7 @@ fn handle_client(mut stream: std::net::TcpStream) {
                 // Route Intents
                 let cap_str = intent.target_capability.as_deref().unwrap_or("");
 
-                if cap_str == "List" || cap_str == "Read" || cap_str == "Write" || cap_str == "CreateFolder" {
+                if cap_str == "List" || cap_str == "Read" || cap_str == "Write" || cap_str == "CreateFolder" || cap_str == "Delete" {
                     final_result = fs_plugin.execute(&intent, &context);
                 } else if cap_str == "Ps" || cap_str == "Kill" {
                     final_result = proc_plugin.execute(&intent, &context);

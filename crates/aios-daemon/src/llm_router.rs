@@ -1,5 +1,7 @@
 use aios_core::models::{ExecutionResult, Intent, SystemContext};
 use aios_core::plugin::AiosNativeApp;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 
 pub struct LlmRouterApp;
 
@@ -29,6 +31,7 @@ impl AiosNativeApp for LlmRouterApp {
                     `aios-cli fs read <file>`, \
                     `aios-cli fs write <path> <content>` (use this BOTH for creating new files and modifying existing ones), \
                     `aios-cli fs create-folder <path>`, \
+                    `aios-cli fs delete <path>`, \
                     `aios-cli proc ps`, \
                     `aios-cli proc kill <pid>`, \
                     `aios-cli net ifconfig`. Do not output anything else in the block."
@@ -83,7 +86,7 @@ impl AiosNativeApp for LlmRouterApp {
                                     
                                     #[cfg(target_os = "windows")]
                                     let output_res = std::process::Command::new("cmd")
-                                        .args(["/S", "/C", &format!("\"{}\"", safe_cmd)])
+                                        .raw_arg(format!("/C {}", safe_cmd))
                                         .current_dir(&context.active_directory)
                                         .output();
 
