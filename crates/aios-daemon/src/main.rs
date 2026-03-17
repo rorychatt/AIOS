@@ -75,8 +75,25 @@ fn main() {
                                 let router = LlmRouterApp;
                                 let llm_response = router.execute(&intent, &context);
                                 
-                                // Demo logic: We just return the LLM's chosen capability mapping suggestion
-                                final_result = llm_response;
+                                if llm_response.success && llm_response.output.starts_with("[ROUTE]:") {
+                                    let mut new_intent = intent.clone();
+                                    let predicted_cap = llm_response.output.replace("[ROUTE]:", "").trim().to_string();
+                                    new_intent.target_capability = Some(predicted_cap.clone());
+                                    
+                                    println!("LLM suggested route: {}", predicted_cap);
+                                    
+                                    if predicted_cap == "List" || predicted_cap == "Read" {
+                                        final_result = fs_plugin.execute(&new_intent, &context);
+                                    } else if predicted_cap == "Ps" || predicted_cap == "Kill" {
+                                        final_result = proc_plugin.execute(&new_intent, &context);
+                                    } else if predicted_cap == "IfConfig" {
+                                        final_result = net_plugin.execute(&new_intent, &context);
+                                    } else {
+                                        final_result = llm_response; // Give conversational output back
+                                    }
+                                } else {
+                                    final_result = llm_response; // pure conversational response
+                                }
                             }
                             
                             let mut response_yaml = serde_yaml::to_string(&final_result).unwrap();

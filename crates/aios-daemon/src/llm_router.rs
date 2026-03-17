@@ -40,7 +40,7 @@ impl AiosNativeApp for LlmRouterApp {
                     serde_yaml::Value::Mapping({
                         let mut m = serde_yaml::Mapping::new();
                         m.insert(serde_yaml::Value::String("role".to_string()), serde_yaml::Value::String("system".to_string()));
-                        m.insert(serde_yaml::Value::String("content".to_string()), serde_yaml::Value::String("You are the AIOS kernel router. Decide which system capability should handle the user request. Respond ONLY with the target capability string (e.g. 'core.fs.list', 'core.proc.kill').".to_string()));
+                        m.insert(serde_yaml::Value::String("content".to_string()), serde_yaml::Value::String("You are AIOS, the conversational AI-first Operating System kernel. The user is talking to you via a terminal. You can answer their questions naturally. If they ask to perform an action (like listing files, viewing network, or checking processes), you MUST reply EXACTLY with `[ROUTE]: <Capability>` (e.g. `[ROUTE]: Ps`, `[ROUTE]: List`, `[ROUTE]: IfConfig`). DO NOT wrap it in backticks, just output the string. If no action is needed, just converse with the user.".to_string()));
                         m
                     }),
                     serde_yaml::Value::Mapping({
@@ -70,7 +70,7 @@ impl AiosNativeApp for LlmRouterApp {
                             if let Some(content) = json["choices"][0]["message"]["content"].as_str() {
                                 ExecutionResult {
                                     success: true,
-                                    output: format!("LLM Router determined capability: {}", content),
+                                    output: content.to_string(), // Return the conversational or route string directly
                                     error: None,
                                 }
                             } else {

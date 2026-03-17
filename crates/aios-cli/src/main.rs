@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 use std::net::TcpStream;
 use std::env;
 use std::collections::HashMap;
@@ -6,13 +6,14 @@ use aios_core::models::{Intent, ExecutionResult};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 3 {
-        println!("Usage: aios-cli <Capability> <Intent Statement> [paramKey=paramValue...]");
-        println!("Example: aios-cli List \"List files in directory\" path=.");
-        println!("Example: aios-cli Kill \"Kill process\" pid=1234");
+    if args.len() < 2 {
+        println!("Starting AIOS Conversational Mode...");
+        println!("Type 'exit' to quit.");
+        run_repl();
         return;
     }
 
+    // Direct CLI execution mode
     let target_cap = args[1].clone();
     let raw_text = args[2].clone();
     
@@ -31,7 +32,38 @@ fn main() {
     };
 
     println!("Calling AIOS Daemon with Intent: '{}'", raw_text);
+    send_intent(intent);
+}
 
+fn run_repl() {
+    let stdin = io::stdin();
+    loop {
+        print!("\nAIOS> ");
+        io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        if stdin.read_line(&mut input).is_ok() {
+            let input = input.trim();
+            if input.is_empty() {
+                continue;
+            }
+            if input.eq_ignore_ascii_case("exit") || input.eq_ignore_ascii_case("quit") {
+                println!("Goodbye!");
+                break;
+            }
+
+            let intent = Intent {
+                raw_text: input.to_string(),
+                target_capability: None, // Pass to LLM router to figure out
+                parameters: HashMap::new(),
+            };
+
+            send_intent(intent);
+        }
+    }
+}
+
+fn send_intent(intent: Intent) {
     match TcpStream::connect("127.0.0.1:9090") {
         Ok(mut stream) => {
             let mut request_yaml = serde_yaml::to_string(&intent).unwrap();
@@ -44,14 +76,13 @@ fn main() {
                 match serde_yaml::from_str::<ExecutionResult>(&buffer) {
                     Ok(result) => {
                         if result.success {
-                            println!("Success:\n{}", result.output);
+                            println!("{}", result.output);
                         } else {
-                            println!("Error:\n{}", result.error.unwrap_or_else(|| "Unknown Error".to_string()));
+                            println!("Error: {}", result.error.unwrap_or_else(|| "Unknown Error".to_string()));
                         }
                     }
                     Err(e) => {
                         println!("YAML Parse Error: {}", e);
-                        // Fallback to raw buffer
                         println!("Raw Response:\n{}", buffer);
                     }
                 }
