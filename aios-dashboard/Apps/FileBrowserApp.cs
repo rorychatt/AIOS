@@ -48,10 +48,39 @@ public class FileBrowserApp : ViewBase
                 | (filesQuery.Loading ? Text.Block("Loading directory...") : null)
                 | (filesQuery.Error != null ? Text.Block("Error: " + filesQuery.Error.Message).Color(Colors.Destructive) : null)
                 | (filesQuery.Value != null ? 
-                    Layout.Vertical().Gap(1)
-                    | filesQuery.Value.Select(f => 
-                        new Button(f).Variant(ButtonVariant.Outline).OnClick(() => selectedFile.Set(f))
-                    )
+                    Layout.Vertical().Gap(2)
+                    | new Tree(
+                        filesQuery.Value.Select(f => {
+                            var isFolder = f.EndsWith("/");
+                            var cleanName = isFolder ? f.Substring(0, f.Length - 1) : f;
+                            return new MenuItem(cleanName)
+                                .Icon(isFolder ? Icons.Folder : Icons.FileText)
+                                .Tag(f); // Tag is used to handle selection events
+                        }).Prepend(currentPath.Value != "." 
+                            ? new MenuItem(".. (Up)").Icon(Icons.CornerLeftUp).Tag("..") 
+                            : null!)
+                          .Where(m => m != null)
+                          .ToArray()
+                    ).OnSelect(e => {
+                        var tag = e.Value?.ToString() ?? "";
+                        if (tag == "..") {
+                            var parts = currentPath.Value.Split('/');
+                            if (parts.Length > 1) {
+                                currentPath.Set(string.Join("/", parts.Take(parts.Length - 1)));
+                            } else {
+                                currentPath.Set(".");
+                            }
+                        } else if (tag.EndsWith("/")) {
+                            // Selected a folder, navigate into it
+                            var folderName = tag.Substring(0, tag.Length - 1);
+                            var newPath = currentPath.Value == "." ? folderName : $"{currentPath.Value}/{folderName}";
+                            currentPath.Set(newPath);
+                        } else {
+                            // Selected a file, update view
+                            var filePath = currentPath.Value == "." ? tag : $"{currentPath.Value}/{tag}";
+                            selectedFile.Set(filePath);
+                        }
+                    })
                 : null)
             )
             | (Layout.Vertical().Gap(4).Size(Size.Full())

@@ -42,7 +42,12 @@ impl AiosNativeApp for FileSystemApp {
                         let mut files = Vec::new();
                         for entry in entries.flatten() {
                             if let Ok(name) = entry.file_name().into_string() {
-                                files.push(name);
+                                let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
+                                if is_dir {
+                                    files.push(format!("{}/", name));
+                                } else {
+                                    files.push(name);
+                                }
                             }
                         }
                         ExecutionResult {
