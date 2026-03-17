@@ -66,9 +66,20 @@ impl AiosNativeApp for LlmRouterApp {
                                     let command_str = command_str.trim();
                                     println!("LLM decided to run: {}", command_str);
                                     
-                                    // Replace `aios-cli` with `cargo run --bin aios-cli --` so we use the dev environment
-                                    // and let the OS shell perfectly parse quotes and escape characters like \ (spaces)
-                                    let safe_cmd = command_str.replacen("aios-cli", "cargo run --quiet --bin aios-cli --", 1);
+                                    // Locate the compiled `aios-cli` binary alongside the running `aios-daemon` binary
+                                    let exe_path = std::env::current_exe().unwrap_or_else(|_| std::path::PathBuf::from("aios-daemon"));
+                                    let mut cli_path = exe_path.parent().unwrap_or(std::path::Path::new(".")).to_path_buf();
+                                    
+                                    #[cfg(target_os = "windows")]
+                                    cli_path.push("aios-cli.exe");
+                                    #[cfg(not(target_os = "windows"))]
+                                    cli_path.push("aios-cli");
+                                    
+                                    let cli_path_str = cli_path.to_string_lossy().to_string();
+
+                                    // We must use the exact absolute path to `aios-cli` because the subprocess runs inside `~/.aios/` 
+                                    // where `cargo run` cannot find a `Cargo.toml`.
+                                    let safe_cmd = command_str.replacen("aios-cli", &format!("\"{}\"", cli_path_str), 1);
                                     
                                     #[cfg(target_os = "windows")]
                                     let output_res = std::process::Command::new("cmd")
